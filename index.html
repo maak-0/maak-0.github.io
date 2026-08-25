@@ -552,7 +552,7 @@ const NOTIF_ICON='data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.or
 const SAT_TARGET=90, ESC_WARN_D=3, ESC_CRIT_D=7, REPEAT_MIN=3;
 
 const ROLE   ={tech:'القائم بالجولة',head:'رئيس القسم',sup:'مشرف الأقسام',admin:'الإدارة'};
-const ROLE_IC={tech:'🩺',head:'🧑‍⚕️',sup:'👩‍⚕️',admin:'🏛️',director:'⭐',support:'🛠️'};
+const ROLE_IC={tech:'🩺',head:'🧑‍⚕️',sup:'👩‍⚕️',admin:'🏛️',director:'⭐',support:'🛠️',shift:'🌙',shiftmgr:'🌗'};
 const DEPTS=[
  {ar:'جناح الرجال (باطني/جراحي)',en:'Male Medical/Surgical'},
  {ar:'جناح النساء (باطني/جراحي)',en:'Female Medical/Surgical'},
@@ -583,24 +583,26 @@ const SUPPORT_DEPTS=[
 function supportLabel(ar){const d=SUPPORT_DEPTS.find(x=>x.ar===ar);return d?(LANG==='en'?d.en:d.ar):ar;}
 const DEPT_AR=DEPTS.map(d=>d.ar);
 function deptLabel(ar){const d=DEPTS.find(x=>x.ar===ar);return d?(LANG==='en'?d.en:d.ar):(ar||'');}
-function isMultiDept(u){return !!u&&(u.role==='sup'||u.role==='admin'||u.role==='director');}
-function seesAll(u){return isMultiDept(u);}
+function isMultiDept(u){return !!u&&(u.role==='sup'||u.role==='admin'||u.role==='director'||u.role==='shift'||u.role==='shiftmgr');}
+function seesAll(u){return !!u&&(u.role==='sup'||u.role==='admin'||u.role==='director');}
 function userDepts(u){
   if(!u)return[];
   if(u.role==='tech'||u.role==='head')return u.dept?[u.dept]:[];
   if(u.role==='support')return [];               // support dept scoped by support-queue, not nursing depts
-  // sup/admin/director: no depts field at all = legacy account → treat as all departments
+  // sup/admin/director/shift: depts field. legacy account (null) = all departments
   const d=(u.depts==null)?['*']:u.depts;
   return d.includes('*')?DEPT_AR.slice():d;
 }
-function seesAllDepts(u){return !!u&&isMultiDept(u)&&(u.depts==null||u.depts.includes('*'));}
+function seesAllDepts(u){return !!u&&(u.role==='sup'||u.role==='admin'||u.role==='director')&&(u.depts==null||u.depts.includes('*'));}
 function canManageProblems(u){return !!u&&['head','sup','admin','director'].includes(u.role);}
 function canManageUsers(u){return !!u&&u.role==='admin';}
 function canExport(u){return !!u&&['head','sup','admin','director'].includes(u.role);}
 function canDeleteRounds(u){return !!u&&(OWNER_UID?u.uid===OWNER_UID:u.role==='admin');}
 function canSeeStaff(u){return !!u&&['head','sup','admin','director'].includes(u.role);}
-function canDoRounds(u){return !!u&&u.role==='tech';}
-function canEscalateExternal(u){return !!u&&['sup','admin','director'].includes(u.role);} // sup + admin + director
+function canDoRounds(u){return !!u&&(u.role==='tech'||u.role==='shift'||u.role==='shiftmgr');}
+function isShift(u){return !!u&&(u.role==='shift'||u.role==='shiftmgr');}   // rounds-capable multi-dept shift family
+function isShiftMgr(u){return !!u&&u.role==='shiftmgr';}                     // also follows shift-supervisors' productivity
+function canEscalateExternal(u){return !!u&&['sup','admin','director','shift','shiftmgr'].includes(u.role);} // + shift family
 function isSupportDept(u){return !!u&&u.role==='support';}
 // the set of support departments this support account covers.
 // single-dept account → [supportDept]; multi-dept "رئيس أقسام مساندة" → supportDepts array.
@@ -625,9 +627,9 @@ const I18N={
   app_title:'معك',app_tagline:'نهتم... ورضاك غايتنا',app_sub:'جولات رضا المرضى · مستشفى الجبيل العام',
   logout:'تسجيل الخروج',lang_btn:'EN',
   status_pending:'يُرفع لاحقاً ({n})',status_offline_ok:'بدون إنترنت · محفوظ',status_pending_hint:'الجولات محفوظة على الجهاز وتُرفع تلقائياً أول ما يرجع الاتصال — لا تقفلي الصفحة.',status_cloud:'متصل بالسحابة',status_local:'غير متصل',
-  role_tech:'القائم بالجولة',role_head:'رئيس القسم',role_sup:'مشرف الأقسام',role_admin:'الإدارة',role_director:'مديرة إدارة التمريض',role_support:'قسم مساند',
+  role_tech:'القائم بالجولة',role_head:'رئيس القسم',role_sup:'مشرف الأقسام',role_admin:'الإدارة',role_director:'مديرة إدارة التمريض',role_support:'قسم مساند',role_shift:'مشرف مواقع كلينيكية',role_shiftmgr:'مدير مواقع كلينيكية',
   all_departments:'كل الأقسام',n_departments:'{n} أقسام',
-  tab_new:'جولة جديدة',tab_myrounds:'جولات قسمي',tab_problems:'المشاكل',tab_all_all:'كل الجولات',tab_all_dept:'جولات القسم',tab_dash:'الداشبورد',st_title:'إنتاجية الفريق',st_sub:'جولات كل موظفة ومعدّلها اليومي ومستوى الرضا في جولاتها.',st_kpi_staff:'موظفات نشطات',st_kpi_rounds:'إجمالي الجولات',st_kpi_avg_per:'متوسط الجولات للموظفة',st_kpi_top:'الأعلى إنتاجية',st_th_name:'الموظفة',st_th_rounds:'الجولات',st_th_perday:'المعدل اليومي',st_th_days:'أيام العمل',st_th_sat:'متوسط الرضا',st_th_issues:'مشاكل رصدتها',st_th_res:'حلّتها',st_th_esc:'صعّدتها',st_th_last:'آخر جولة',st_none:'ما فيه جولات في هذه الفترة',st_none_sub:'غيّري الفترة أو القسم.',st_inactive:'بدون جولات في الفترة',st_detail:'تفصيل يومي — {name}',st_back:'رجوع للقائمة',st_day:'اليوم',st_rounds_day:'الجولات',st_sat_day:'متوسط الرضا',st_no_days:'ما فيه أيام مسجّلة في هذه الفترة.',st_click_hint:'اضغطي على أي موظفة لعرض تفصيلها اليومي.',st_staff_note:'القائمة تشمل الموظفات في أقسامك. اللي ما سوّت جولات تظهر في الآخر.',tab_staff:'الإنتاجية',tab_users:'المستخدمون',tab_support_queue:'المشاكل الواردة',
+  tab_new:'جولة جديدة',tab_myrounds:'جولات قسمي',tab_problems:'المشاكل',tab_all_all:'كل الجولات',tab_all_dept:'جولات القسم',tab_dash:'الداشبورد',st_title:'إنتاجية الفريق',st_sub:'جولات كل موظفة ومعدّلها اليومي ومستوى الرضا في جولاتها.',st_kpi_staff:'موظفات نشطات',st_kpi_rounds:'إجمالي الجولات',st_kpi_avg_per:'متوسط الجولات للموظفة',st_kpi_top:'الأعلى إنتاجية',st_th_name:'الموظفة',st_th_rounds:'الجولات',st_th_perday:'المعدل اليومي',st_th_days:'أيام العمل',st_th_sat:'متوسط الرضا',st_th_issues:'مشاكل رصدتها',st_th_res:'حلّتها',st_th_esc:'صعّدتها',st_th_last:'آخر جولة',st_none:'ما فيه جولات في هذه الفترة',st_none_sub:'غيّري الفترة أو القسم.',st_inactive:'بدون جولات في الفترة',st_detail:'تفصيل يومي — {name}',st_back:'رجوع للقائمة',st_day:'اليوم',st_rounds_day:'الجولات',st_sat_day:'متوسط الرضا',st_no_days:'ما فيه أيام مسجّلة في هذه الفترة.',st_click_hint:'اضغطي على أي موظفة لعرض تفصيلها اليومي.',hs_title:'إنتاجية رؤساء الأقسام',hs_sub:'كم مشكلة مصعّدة حلّها كل رئيس قسم، وزمن الحل، ورضا المريض، والمتأخرة في قسمه.',hs_th_res:'مشاكل حُلّت',hs_th_overdue:'متأخرة',st_staff_note:'القائمة تشمل الموظفات في أقسامك. اللي ما سوّت جولات تظهر في الآخر.',tab_staff:'الإنتاجية',tab_users:'المستخدمون',tab_support_queue:'المشاكل الواردة',
   login_quote:'قد ينسى المريض أسماءنا، لكنه لن ينسى من جلس معه دقيقة وسأل: كيف حالك اليوم؟',login_title:'معك',login_sub:'جولات رضا المرضى · مستشفى الجبيل العام',
   email:'البريد الإلكتروني',password:'كلمة المرور',login_btn:'تسجيل الدخول',login_note:'الدخول للموظفات المصرّح لهنّ فقط. للحصول على حساب راجعي الإدارة.',login_signingin:'جارِ الدخول…',
   err_fill_login:'اكتبي البريد وكلمة المرور',kpi_coverage:'نسبة التغطية',cov_sub:'{r} جولة من {e} مريض',cov_nodata:'أدخلي أعداد المرضى',
@@ -683,7 +685,7 @@ const I18N={
   sec_trend:'اتجاه الرضا عبر الفترات',sec_strengths:'نقاط القوة والضعف حسب البند',sec_issue_status:'حالة المشاكل (الفترة الحالية)',bar_resolved:'تم الحل',bar_escalated:'مُصعّدة',bar_open:'مفتوحة',sec_by_dept:'حسب القسم (كل الفترات)',no_rounds_period:'لا توجد جولات في هذه الفترة.',no_rounds_yet:'لا توجد جولات مسجّلة بعد.',rounds_unit:'جولة',
   pl_daily:'اليوم',pl_weekly:'هذا الأسبوع',pl_monthly:'هذا الشهر',pl_quarterly:'هذا الربع',pl_yearly:'هذي السنة',week_prefix:'أسبوع',quarter_prefix:'ربع',
   um_title:'إدارة المستخدمين',um_sub:'أنشئي حسابات الموظفات وحدّدي دور كل وحدة وقسمها. لا أحد يدخل النظام إلا من تنشئينه هنا.',loading:'جارِ التحميل…',add_staff:'إضافة موظفة جديدة',f_title:'المسمى الوظيفي',f_title_ph:'مثال: ممرضة · فني رعاية مرضى · منسقة جودة',th_title:'المسمى الوظيفي',no_title:'—',f_name:'الاسم',f_name_ph:'الاسم الكامل',f_temp_pass:'كلمة المرور المؤقتة',f_pass_ph:'٦ أحرف على الأقل',f_role:'الدور',f_dept_allowed:'الأقسام المسموح بالاطّلاع عليها',depts_hint:'أشّري الأقسام اللي يقدر هذا الحساب يطّلع عليها، أو اختاري «كل الأقسام».',create_account:'➕ إنشاء الحساب',creating:'جارِ الإنشاء…',accounts_word:'الحسابات ({n})',th_name:'الاسم',th_email:'البريد',th_role:'الدور',th_dept2:'القسم',no_users:'لا يوجد مستخدمون بعد',you_label:'أنتِ',revoke_access:'إلغاء الوصول',users_note:'ملاحظة: «إلغاء الوصول» يمنع الموظفة من دخول النظام فوراً. لحذف الحساب نهائياً من قاعدة المصادقة، احذفيه من Firebase Console ← Authentication.',
-  btn_edit:'تعديل',edit_title:'تعديل بيانات الحساب',save_changes:'💾 حفظ التعديلات',btn_cancel:'إلغاء',toast_user_updated:'تم تحديث بيانات الحساب',self_role_note:'ما تقدرين تغيّرين دور حسابك أنتِ.',admin_all_note:'حساب الإدارة يطّلع على كل الأقسام تلقائياً.',director_all_note:'مديرة إدارة التمريض تطّلع على كل الأقسام والجولات والتقارير تلقائياً (بدون إدارة الحسابات).',f_support_dept:'القسم المساند',support_dept_hint:'هذا الحساب بيشوف بس المشاكل المصعّدة لهذا القسم.',f_support_depts:'الأقسام المساندة',support_depts_hint:'أشّري قسم واحد (حساب قسم مساند)، أو عدة أقسام (رئيس يتابع عدة أقسام مساندة). يشوف ويحل مشاكل الأقسام المختارة فقط.',suplead_title:'رئيس الأقسام المساندة',suplead_sub:'تتابعين وتحلّين مشاكل: {list}',tab_sup_team:'متابعة الموظفين',supteam_title:'متابعة موظفي الخدمات المساندة',supteam_sub:'إنتاجية الأقسام اللي تتابعينها: {list}',supteam_kpi_depts:'الأقسام',supteam_kpi_depts_sub:'تحت إشرافك',supteam_kpi_issues:'إجمالي المشاكل',supteam_kpi_closed_sub:'{n} محلولة',supteam_avg_all:'لكل الأقسام',supteam_sat_sub:'{n} تقييم',supteam_none:'ما فيه نشاط بعد',supteam_none_sub:'أول ما توصل مشاكل لأقسامك وتُحل، تظهر الإحصائيات هنا.',supteam_th_active:'أكثر موظف نشاطاً',supteam_th_total:'إجمالي',supteam_th_closed:'محلولة',supteam_th_open:'مفتوحة',err_pick_support:'اختاري القسم المساند',th_status:'الحالة',st_active:'نشط',st_disabled:'موقوف',btn_disable:'إيقاف الوصول',btn_enable:'إعادة التفعيل',confirm_disable:'إيقاف وصول {name}؟ ما راح تقدر تدخل النظام، وتقدرين ترجعينها متى ما تبين.',toast_disabled:'تم إيقاف الحساب',toast_enabled:'تم تفعيل الحساب',err_email_active:'هذا البريد له حساب فعّال بالفعل في القائمة تحت',toast_access_restored:'تم استرجاع الحساب القديم وتفعيله',err_restore_pass:'هذا البريد له حساب قديم في نظام الدخول. اكتبي كلمة المرور الأصلية لاسترجاعه، أو احذفي الحساب من Firebase Console ← Authentication وأعيدي المحاولة.',hint_disabled_note:'الحساب الموقوف يبقى محفوظ — ترجعينه بضغطة «إعادة التفعيل» بدون ما تنشئينه من جديد.',err_fill_user:'أكملي الاسم والبريد وكلمة المرور',err_pass_short:'كلمة المرور ٦ أحرف على الأقل',err_pick_dept:'اختاري قسم واحد على الأقل أو «كل الأقسام»',toast_account_created:'تم إنشاء الحساب',confirm_revoke:'إلغاء وصول {name}؟ لن تتمكن من دخول النظام بعدها.',err_cant_revoke_self:'لا يمكنك إلغاء وصولك',toast_revoked:'تم إلغاء الوصول',err_delete:'تعذّر الحذف',um_locked_title:'غير مصرّح',um_locked_sub:'هذه الصفحة للإدارة فقط.',
+  btn_edit:'تعديل',edit_title:'تعديل بيانات الحساب',save_changes:'💾 حفظ التعديلات',btn_cancel:'إلغاء',toast_user_updated:'تم تحديث بيانات الحساب',self_role_note:'ما تقدرين تغيّرين دور حسابك أنتِ.',admin_all_note:'حساب الإدارة يطّلع على كل الأقسام تلقائياً.',director_all_note:'مديرة إدارة التمريض تطّلع على كل الأقسام والجولات والتقارير تلقائياً (بدون إدارة الحسابات).',f_support_dept:'القسم المساند',support_dept_hint:'هذا الحساب بيشوف بس المشاكل المصعّدة لهذا القسم.',f_support_depts:'الأقسام المساندة',support_depts_hint:'أشّري قسم واحد (حساب قسم مساند)، أو عدة أقسام (رئيس يتابع عدة أقسام مساندة). يشوف ويحل مشاكل الأقسام المختارة فقط.',suplead_title:'رئيس الأقسام المساندة',suplead_sub:'تتابعين وتحلّين مشاكل: {list}',tab_sup_team:'متابعة الموظفين',supteam_title:'متابعة موظفي الخدمات المساندة',supteam_sub:'إنتاجية الأقسام اللي تتابعينها: {list}',supteam_kpi_depts:'الأقسام',supteam_kpi_depts_sub:'تحت إشرافك',supteam_kpi_issues:'إجمالي المشاكل',supteam_kpi_closed_sub:'{n} محلولة',supteam_avg_all:'لكل الأقسام',supteam_sat_sub:'{n} تقييم',supteam_none:'ما فيه نشاط بعد',supteam_none_sub:'أول ما توصل مشاكل لأقسامك وتُحل، تظهر الإحصائيات هنا.',supteam_th_active:'أكثر موظف نشاطاً',supteam_th_total:'إجمالي',supteam_th_closed:'محلولة',supteam_th_open:'مفتوحة',tab_shift_team:'متابعة المشرفين',shteam_title:'متابعة مشرفي المواقع الكلينيكية',shteam_sub:'إنتاجية مشرفي المواقع الكلينيكية اللي تحتك: الجولات، المشاكل، والرضا.',shteam_kpi_staff:'المشرفون',shteam_kpi_rounds:'إجمالي الجولات',shteam_none:'ما فيه مشرفو مواقع كلينيكية تحتك بعد',shteam_none_sub:'أضيفي حسابات «مشرف مواقع كلينيكية» على أقسامك من الإدارة، وتظهر إنتاجيتهم هنا.',shteam_th_depts:'الأقسام',err_pick_support:'اختاري القسم المساند',th_status:'الحالة',st_active:'نشط',st_disabled:'موقوف',btn_disable:'إيقاف الوصول',btn_enable:'إعادة التفعيل',confirm_disable:'إيقاف وصول {name}؟ ما راح تقدر تدخل النظام، وتقدرين ترجعينها متى ما تبين.',toast_disabled:'تم إيقاف الحساب',toast_enabled:'تم تفعيل الحساب',err_email_active:'هذا البريد له حساب فعّال بالفعل في القائمة تحت',toast_access_restored:'تم استرجاع الحساب القديم وتفعيله',err_restore_pass:'هذا البريد له حساب قديم في نظام الدخول. اكتبي كلمة المرور الأصلية لاسترجاعه، أو احذفي الحساب من Firebase Console ← Authentication وأعيدي المحاولة.',hint_disabled_note:'الحساب الموقوف يبقى محفوظ — ترجعينه بضغطة «إعادة التفعيل» بدون ما تنشئينه من جديد.',err_fill_user:'أكملي الاسم والبريد وكلمة المرور',err_pass_short:'كلمة المرور ٦ أحرف على الأقل',err_pick_dept:'اختاري قسم واحد على الأقل أو «كل الأقسام»',toast_account_created:'تم إنشاء الحساب',confirm_revoke:'إلغاء وصول {name}؟ لن تتمكن من دخول النظام بعدها.',err_cant_revoke_self:'لا يمكنك إلغاء وصولك',toast_revoked:'تم إلغاء الوصول',err_delete:'تعذّر الحذف',um_locked_title:'غير مصرّح',um_locked_sub:'هذه الصفحة للإدارة فقط.',
   sc_5:'ممتاز',sc_4:'جيد جداً',sc_3:'جيد',sc_2:'مقبول',sc_1:'ضعيف',
   q_q3:'تعريف طاقم التمريض بأنفسهم',q_q4:'شرح واستئذان الفريق قبل الفحوصات والإجراءات (سحب دم، علامات حيوية، إعطاء دواء…)',q_q5:'لطف واهتمام فريق التمريض',q_q6:'سرعة الاستجابة لجرس الاستدعاء',q_q7:'مراعاة الفريق لاحتياجاتك الخاصة أو الشخصية',q_q8:'حرص الفريق على إطلاعك بما يجري'
  },
@@ -691,9 +693,9 @@ const I18N={
   app_title:'Ma\'ak',app_tagline:'We care… your satisfaction is our goal',app_sub:'Patient Satisfaction Rounds · Jubail General Hospital',
   logout:'Sign out',lang_btn:'ع',
   status_pending:'Will upload ({n})',status_offline_ok:'Offline · saved',status_pending_hint:'Rounds are saved on this device and upload automatically once you are back online — keep this page open.',status_cloud:'Cloud connected',status_local:'Offline',
-  role_tech:'Rounds Conductor',role_head:'Department Head',role_sup:'Departments Supervisor',role_admin:'Administration',role_director:'Nursing Director',role_support:'Support Department',
+  role_tech:'Rounds Conductor',role_head:'Department Head',role_sup:'Departments Supervisor',role_admin:'Administration',role_director:'Nursing Director',role_support:'Support Department',role_shift:'Clinical Site Staff',role_shiftmgr:'Clinical Site Manager',
   all_departments:'All Departments',n_departments:'{n} departments',
-  tab_new:'New Round',tab_myrounds:'My Rounds',tab_problems:'Issues',tab_all_all:'All Rounds',tab_all_dept:'Department Rounds',tab_dash:'Dashboard',st_title:'Team Productivity',st_sub:'Rounds per staff member, daily rate, and the satisfaction level in their rounds.',st_kpi_staff:'Active staff',st_kpi_rounds:'Total rounds',st_kpi_avg_per:'Avg. rounds per person',st_kpi_top:'Top performer',st_th_name:'Staff member',st_th_rounds:'Rounds',st_th_perday:'Per day',st_th_days:'Active days',st_th_sat:'Avg. satisfaction',st_th_issues:'Issues found',st_th_res:'Resolved',st_th_esc:'Escalated',st_th_last:'Last round',st_none:'No rounds in this period',st_none_sub:'Try a different period or department.',st_inactive:'No rounds this period',st_detail:'Daily breakdown — {name}',st_back:'Back to list',st_day:'Day',st_rounds_day:'Rounds',st_sat_day:'Avg. satisfaction',st_no_days:'No days recorded in this period.',st_click_hint:'Tap any staff member to see their daily breakdown.',st_staff_note:'The list covers staff in your departments. Anyone with no rounds appears at the bottom.',tab_staff:'Productivity',tab_users:'Users',tab_support_queue:'Incoming Issues',
+  tab_new:'New Round',tab_myrounds:'My Rounds',tab_problems:'Issues',tab_all_all:'All Rounds',tab_all_dept:'Department Rounds',tab_dash:'Dashboard',st_title:'Team Productivity',st_sub:'Rounds per staff member, daily rate, and the satisfaction level in their rounds.',st_kpi_staff:'Active staff',st_kpi_rounds:'Total rounds',st_kpi_avg_per:'Avg. rounds per person',st_kpi_top:'Top performer',st_th_name:'Staff member',st_th_rounds:'Rounds',st_th_perday:'Per day',st_th_days:'Active days',st_th_sat:'Avg. satisfaction',st_th_issues:'Issues found',st_th_res:'Resolved',st_th_esc:'Escalated',st_th_last:'Last round',st_none:'No rounds in this period',st_none_sub:'Try a different period or department.',st_inactive:'No rounds this period',st_detail:'Daily breakdown — {name}',st_back:'Back to list',st_day:'Day',st_rounds_day:'Rounds',st_sat_day:'Avg. satisfaction',st_no_days:'No days recorded in this period.',st_click_hint:'Tap any staff member to see their daily breakdown.',hs_title:'Department Heads Productivity',hs_sub:'How many escalated issues each head resolved, resolution time, patient satisfaction, and overdue in their department.',hs_th_res:'Issues resolved',hs_th_overdue:'Overdue',st_staff_note:'The list covers staff in your departments. Anyone with no rounds appears at the bottom.',tab_staff:'Productivity',tab_users:'Users',tab_support_queue:'Incoming Issues',
   login_quote:'A patient may forget our names, but never the one who sat with them a minute and asked: how are you today?',login_title:'Ma\'ak',login_sub:'Patient Satisfaction Rounds · Jubail General Hospital',
   email:'Email',password:'Password',login_btn:'Sign in',login_note:'Access is limited to authorized staff. Contact administration for an account.',login_signingin:'Signing in…',
   err_fill_login:'Enter your email and password',kpi_coverage:'Coverage',cov_sub:'{r} rounds of {e} patients',cov_nodata:'Enter patient counts',
@@ -749,7 +751,7 @@ const I18N={
   sec_trend:'Satisfaction Trend Across Periods',sec_strengths:'Strengths & Weaknesses by Item',sec_issue_status:'Issue Status (current period)',bar_resolved:'Resolved',bar_escalated:'Escalated',bar_open:'Open',sec_by_dept:'By Department (all periods)',no_rounds_period:'No rounds in this period.',no_rounds_yet:'No rounds recorded yet.',rounds_unit:'rounds',
   pl_daily:'Today',pl_weekly:'This week',pl_monthly:'This month',pl_quarterly:'This quarter',pl_yearly:'This year',week_prefix:'Wk',quarter_prefix:'Q',
   um_title:'User Management',um_sub:"Create staff accounts and set each person's role and department. No one can access the system unless you create them here.",loading:'Loading…',add_staff:'Add New Staff',f_title:'Job title',f_title_ph:'e.g. Nurse · Patient care technician · Quality coordinator',th_title:'Job title',no_title:'—',f_name:'Name',f_name_ph:'Full name',f_temp_pass:'Temporary password',f_pass_ph:'At least 6 characters',f_role:'Role',f_dept_allowed:'Departments allowed to view',depts_hint:'Check the departments this account can view, or choose "All Departments".',create_account:'➕ Create Account',creating:'Creating…',accounts_word:'Accounts ({n})',th_name:'Name',th_email:'Email',th_role:'Role',th_dept2:'Department',no_users:'No users yet',you_label:'You',revoke_access:'Revoke access',users_note:'Note: "Revoke access" blocks the staff member from signing in immediately. To permanently delete the account, remove it from Firebase Console → Authentication.',
-  btn_edit:'Edit',edit_title:'Edit account details',save_changes:'💾 Save changes',btn_cancel:'Cancel',toast_user_updated:'Account updated',self_role_note:"You can't change your own role.",admin_all_note:'An administration account always sees every department.',director_all_note:'The nursing director sees all departments, rounds, and reports automatically (without user management).',f_support_dept:'Support department',support_dept_hint:'This account will only see issues escalated to this department.',f_support_depts:'Support departments',support_depts_hint:'Check one department (a support-dept account), or several (a lead supervising multiple support depts). Sees and resolves issues for the selected departments only.',suplead_title:'Support Departments Lead',suplead_sub:'You follow and resolve issues for: {list}',tab_sup_team:'Team',supteam_title:'Support Team Follow-up',supteam_sub:'Productivity of the departments you supervise: {list}',supteam_kpi_depts:'Departments',supteam_kpi_depts_sub:'under you',supteam_kpi_issues:'Total issues',supteam_kpi_closed_sub:'{n} resolved',supteam_avg_all:'across all depts',supteam_sat_sub:'{n} ratings',supteam_none:'No activity yet',supteam_none_sub:'Once issues reach your departments and get resolved, stats appear here.',supteam_th_active:'Most active staff',supteam_th_total:'Total',supteam_th_closed:'Resolved',supteam_th_open:'Open',err_pick_support:'Choose the support department',th_status:'Status',st_active:'Active',st_disabled:'Disabled',btn_disable:'Disable access',btn_enable:'Re-enable',confirm_disable:'Disable access for {name}? They won\'t be able to sign in, and you can re-enable them anytime.',toast_disabled:'Account disabled',toast_enabled:'Account re-enabled',err_email_active:'This email already has an active account in the list below',toast_access_restored:'Existing account restored and re-enabled',err_restore_pass:'This email already has an account in the sign-in system. Enter its original password to restore it, or delete the account from Firebase Console → Authentication and try again.',hint_disabled_note:'A disabled account is kept — re-enable it with one click instead of creating it again.',err_fill_user:'Complete name, email, and password',err_pass_short:'Password must be at least 6 characters',err_pick_dept:'Choose at least one department or "All Departments"',toast_account_created:'Account created',confirm_revoke:"Revoke access for {name}? They won't be able to sign in afterwards.",err_cant_revoke_self:"You can't revoke your own access",toast_revoked:'Access revoked',err_delete:'Failed to delete',um_locked_title:'Not authorized',um_locked_sub:'This page is for administration only.',
+  btn_edit:'Edit',edit_title:'Edit account details',save_changes:'💾 Save changes',btn_cancel:'Cancel',toast_user_updated:'Account updated',self_role_note:"You can't change your own role.",admin_all_note:'An administration account always sees every department.',director_all_note:'The nursing director sees all departments, rounds, and reports automatically (without user management).',f_support_dept:'Support department',support_dept_hint:'This account will only see issues escalated to this department.',f_support_depts:'Support departments',support_depts_hint:'Check one department (a support-dept account), or several (a lead supervising multiple support depts). Sees and resolves issues for the selected departments only.',suplead_title:'Support Departments Lead',suplead_sub:'You follow and resolve issues for: {list}',tab_sup_team:'Team',supteam_title:'Support Team Follow-up',supteam_sub:'Productivity of the departments you supervise: {list}',supteam_kpi_depts:'Departments',supteam_kpi_depts_sub:'under you',supteam_kpi_issues:'Total issues',supteam_kpi_closed_sub:'{n} resolved',supteam_avg_all:'across all depts',supteam_sat_sub:'{n} ratings',supteam_none:'No activity yet',supteam_none_sub:'Once issues reach your departments and get resolved, stats appear here.',supteam_th_active:'Most active staff',supteam_th_total:'Total',supteam_th_closed:'Resolved',supteam_th_open:'Open',tab_shift_team:'Supervisors',shteam_title:'Shift Supervisors Follow-up',shteam_sub:'Productivity of the shift supervisors under you: rounds, issues, and satisfaction.',shteam_kpi_staff:'Supervisors',shteam_kpi_rounds:'Total rounds',shteam_none:'No shift supervisors under you yet',shteam_none_sub:'Add «Clinical Site Staff» accounts on your departments via Administration, and their productivity shows here.',shteam_th_depts:'Departments',err_pick_support:'Choose the support department',th_status:'Status',st_active:'Active',st_disabled:'Disabled',btn_disable:'Disable access',btn_enable:'Re-enable',confirm_disable:'Disable access for {name}? They won\'t be able to sign in, and you can re-enable them anytime.',toast_disabled:'Account disabled',toast_enabled:'Account re-enabled',err_email_active:'This email already has an active account in the list below',toast_access_restored:'Existing account restored and re-enabled',err_restore_pass:'This email already has an account in the sign-in system. Enter its original password to restore it, or delete the account from Firebase Console → Authentication and try again.',hint_disabled_note:'A disabled account is kept — re-enable it with one click instead of creating it again.',err_fill_user:'Complete name, email, and password',err_pass_short:'Password must be at least 6 characters',err_pick_dept:'Choose at least one department or "All Departments"',toast_account_created:'Account created',confirm_revoke:"Revoke access for {name}? They won't be able to sign in afterwards.",err_cant_revoke_self:"You can't revoke your own access",toast_revoked:'Access revoked',err_delete:'Failed to delete',um_locked_title:'Not authorized',um_locked_sub:'This page is for administration only.',
   sc_5:'Excellent',sc_4:'Very good',sc_3:'Good',sc_2:'Fair',sc_1:'Poor',
   q_q3:'Nursing staff introducing themselves',q_q4:'Explaining and asking permission before tests and procedures (blood draw, vitals, medication…)',q_q5:'Courtesy and attentiveness of the nursing team',q_q6:'Speed of response to the call bell',q_q7:'Attention to your special or personal needs',q_q8:'Keeping you informed about what is happening'
  }
@@ -1241,6 +1243,11 @@ function buildTabs(){
   const r=USER.role;
   if(r==='tech'){
     TABS=[{id:'new',lbl:t('tab_new'),ic:'plus'},{id:'myrounds',lbl:t('tab_myrounds'),ic:'list'}];
+  }else if(r==='shift'){
+    TABS=[{id:'new',lbl:t('tab_new'),ic:'plus'},{id:'myrounds',lbl:t('tab_myrounds'),ic:'list'}];
+  }else if(r==='shiftmgr'){
+    TABS=[{id:'new',lbl:t('tab_new'),ic:'plus'},{id:'myrounds',lbl:t('tab_myrounds'),ic:'list'},
+          {id:'shiftteam',lbl:t('tab_shift_team'),ic:'people'}];
   }else if(r==='head'){
     TABS=[{id:'problems',lbl:t('tab_problems'),ic:'alert',badge:()=>escalatedInScope().length},
           {id:'all',lbl:t('tab_all_dept'),ic:'list'},{id:'staff',lbl:t('tab_staff'),ic:'people'},{id:'dash',lbl:t('tab_dash'),ic:'chart'}];
@@ -1277,7 +1284,7 @@ function boot(){
   const deptTxt=seesAllDepts(USER)?t('all_departments'):(isMultiDept(USER)?t('n_departments',{n:num(userDepts(USER).length)}):deptLabel(USER.dept||''));
   $('#userchip').innerHTML=`<span class="av">${esc(initials(USER.name))}</span>
      <span>${esc(USER.name)}<span class="role"> · ${roleLabel(USER.role)}${deptTxt?' · '+esc(deptTxt):''}</span></span>`;
-  if(!current)current = USER.role==='tech'?'new' : (USER.role==='support'?'support' : ((USER.role==='admin'||USER.role==='director')?'dash':'problems'));
+  if(!current)current = (USER.role==='tech'||USER.role==='shift'||USER.role==='shiftmgr')?'new' : (USER.role==='support'?'support' : ((USER.role==='admin'||USER.role==='director')?'dash':'problems'));
   render();
   // preload the staff directory quietly so managers' WhatsApp lookup works
   if(!staffLoaded&&cloud&&canManageProblems(USER)){loadStaff().catch(()=>{});}
@@ -1285,7 +1292,7 @@ function boot(){
 }
 function render(){
   buildTabs();
-  const v={new:viewNew,myrounds:viewMyRounds,all:viewAll,problems:viewProblems,dash:viewDash,staff:viewStaff,users:viewUsers,support:viewSupport,supteam:viewSupTeam}[current];
+  const v={new:viewNew,myrounds:viewMyRounds,all:viewAll,problems:viewProblems,dash:viewDash,staff:viewStaff,users:viewUsers,support:viewSupport,supteam:viewSupTeam,shiftteam:viewShiftTeam}[current];
   $('#app').innerHTML='';
   if(v)v(); else if(TABS[0]){current=TABS[0].id;render();}
   labelCells();
@@ -1306,7 +1313,14 @@ function labelCells(root){
 
 /* ================= NEW ROUND ================= */
 let draft=null;
-function newDraft(){return{dept:(USER&&USER.dept&&USER.dept!=='all')?USER.dept:'',room:'',pname:'',ptype:'',ratings:{},liked:'',suggestions:'',nurse:'',problems:[],extIssues:[]};}
+function newDraft(){
+  let dep='';
+  if(USER){
+    if(USER.role==='tech'&&USER.dept&&USER.dept!=='all')dep=USER.dept;
+    else if(USER.role==='shift'||USER.role==='shiftmgr'){const ds=userDepts(USER);dep=ds[0]||'';}
+  }
+  return{dept:dep,room:'',pname:'',ptype:'',ratings:{},liked:'',suggestions:'',nurse:'',problems:[],extIssues:[]};
+}
 function viewNew(){
   if(!draft)draft=newDraft();
   const app=$('#app');
@@ -1318,8 +1332,10 @@ function viewNew(){
     <div class="section-title">${t('sec_round_info')}</div>
     <div class="grid3">
       <div>
-        <label class="fld">${t('f_dept')}</label>
-        <div class="lockchip">${esc(deptLabel(draft.dept)||'—')} <span>🔒</span></div>
+        <label class="fld${isShift(USER)?' req':''}">${t('f_dept')}</label>
+        ${isShift(USER)
+          ? `<select id="rdept">${userDepts(USER).map(d=>`<option value="${esc(d)}"${draft.dept===d?' selected':''}>${esc(deptLabel(d))}</option>`).join('')}</select>`
+          : `<div class="lockchip">${esc(deptLabel(draft.dept)||'—')} <span>🔒</span></div>`}
       </div>
       <div>
         <label class="fld req">${t('f_room')}</label>
@@ -1395,6 +1411,7 @@ function viewNew(){
   $('#ptypeSeg').onclick=e=>{const o=e.target.closest('.seg-opt');if(!o)return;draft.ptype=o.dataset.v;paintSeg('ptypeSeg',o);};
   $('#room').oninput=e=>draft.room=e.target.value;
   const pn=$('#pname');if(pn)pn.oninput=e=>draft.pname=e.target.value;
+  const rd=$('#rdept');if(rd)rd.onchange=e=>{draft.dept=e.target.value;};
   $('#liked').oninput=e=>draft.liked=e.target.value;
   $('#suggestions').oninput=e=>draft.suggestions=e.target.value;
   $('#nurse').oninput=e=>draft.nurse=e.target.value;
@@ -1672,7 +1689,11 @@ async function commitRound(){
 }
 
 /* ================= ROUNDS LISTS ================= */
-function viewMyRounds(){roundsList(scopedRounds(),t('mr_title'),t('mr_sub'));}
+function viewMyRounds(){
+  let list=scopedRounds();
+  if(isShift(USER))list=list.filter(r=>r.techUid?r.techUid===USER.uid:r.tech===USER.name);
+  roundsList(list,t('mr_title'),t('mr_sub'));
+}
 let monthFilter='all'; // 'all' or 'YYYY-MM'
 function monthKey(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 function monthLabel(key){
@@ -2155,8 +2176,81 @@ function viewSupTeam(){
   app.innerHTML+=html;
 }
 
-/* ---- photo handling (client-side compress; Firebase Storage upload wired in DB layer) ---- */
-const supPhotoBuf={}; // probId -> dataURL/URL for support close
+/* ---- Clinical Site Manager: productivity of the shift supervisors under them ---- */
+function shiftTeamStats(){
+  const {start}=stRange(stPeriod);
+  const myDepts=userDepts(USER);
+  // shift supervisors whose assigned departments overlap the manager's departments
+  const staff=STAFF.filter(u=>u.role==='shift'&&u.active!==false&&
+    (Array.isArray(u.depts)?u.depts.some(d=>d==='*'||myDepts.includes(d)):false));
+  return staff.map(u=>{
+    const mine=ROUNDS.filter(r=>new Date(r.ts)>=start&&(r.techUid?r.techUid===u.uid:r.tech===u.name));
+    let issues=0,res=0,esc=0;const sat=[];const days={};
+    mine.forEach(r=>{
+      (r.problems||[]).forEach(p=>{issues++;if(p.status==='resolved')res++;else if(p.status==='escalated')esc++;
+        if(p.recheck&&p.recheck.score!=null)sat.push(p.recheck.score);});
+      days[dayKey(r.ts)]=1;
+    });
+    const avgS=sat.length?Math.round((sat.reduce((a,b)=>a+b,0)/sat.length/5)*100):null;
+    return {uid:u.uid,name:u.name||'—',title:u.title||'',depts:(u.depts||[]),n:mine.length,
+      activeDays:Object.keys(days).length,issues,res,esc,avgS,satN:sat.length,
+      avg:periodAvg(mine)};
+  }).sort((a,b)=>b.n-a.n||(a.name>b.name?1:-1));
+}
+
+function viewShiftTeam(){
+  const app=$('#app');
+  if(!isShiftMgr(USER)){app.innerHTML=emptyCard('🔒',t('um_locked_title'),t('um_locked_sub'));return;}
+  app.innerHTML=`<div class="page-head"><div><h2>🌗 ${t('shteam_title')}</h2>
+    <p>${t('shteam_sub')}</p></div></div>
+  <div class="card card-pad" style="margin-bottom:20px">
+    <div class="row-between"><div><label class="fld">${t('f_period')}</label>
+      <div class="seg" id="shSeg">
+        ${['daily','weekly','monthly','quarterly','yearly'].map(v=>`<div class="seg-opt${stPeriod===v?' on':''}" data-v="${v}" style="min-width:auto">${t('p_'+v)}</div>`).join('')}
+      </div></div></div>
+  </div>
+  <div id="shBody"></div>`;
+  $('#shSeg').onclick=e=>{const o=e.target.closest('.seg-opt');if(!o)return;stPeriod=o.dataset.v;renderShiftTeam();};
+  renderShiftTeam();
+  if(cloud&&!staffLoaded){loadStaff().then(()=>{if(current==='shiftteam')renderShiftTeam();});}
+}
+function renderShiftTeam(){
+  const box=$('#shBody');if(!box)return;
+  document.querySelectorAll('#shSeg .seg-opt').forEach(o=>o.classList.toggle('on',o.dataset.v===stPeriod));
+  const rows=shiftTeamStats();
+  if(!rows.length){box.innerHTML=emptyCard('🌙',t('shteam_none'),t('shteam_none_sub'));return;}
+  const active=rows.filter(r=>r.n>0);
+  const total=active.reduce((a,b)=>a+b.n,0);
+  const top=active[0];
+  let html=`<div class="kpis" style="margin-bottom:22px">
+    <div class="kpi accent"><div class="lbl">${t('shteam_kpi_staff')}</div><div class="val">${num(active.length)}</div><div class="sub">${t('p_'+stPeriod)}</div></div>
+    <div class="kpi"><div class="lbl">${t('shteam_kpi_rounds')}</div><div class="val">${num(total)}</div><div class="sub">${t('in_current_period')}</div></div>
+    <div class="kpi good"><div class="lbl">${t('st_kpi_top')}</div><div class="val" style="font-size:17px">${top?esc(top.name):'—'}</div><div class="sub">${top?num(top.n)+' '+t('rounds_unit'):''}</div></div>
+  </div>`;
+  html+=`<div class="card"><div style="overflow-x:auto"><table><thead><tr>
+    <th>${t('st_th_name')}</th><th>${t('shteam_th_depts')}</th><th>${t('st_th_rounds')}</th><th>${t('st_th_days')}</th>
+    <th>${t('st_th_sat')}</th><th>${t('st_th_issues')}</th><th>${t('st_th_res')}</th><th>${t('st_th_esc')}</th><th>${t('th_support_sat')}</th>
+  </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const dim=r.n===0?' style="opacity:.55"':'';
+    let satCell='<span class="hint">—</span>';
+    if(r.avgS!=null){const cls=r.avgS>=80?'good':r.avgS>=50?'warn':'crit';satCell=`<span class="agechip ${cls}">${num(r.avgS)}%</span> <span class="hint">(${num(r.satN)})</span>`;}
+    const deptsTxt=(r.depts.includes('*'))?t('all_departments'):r.depts.map(d=>deptLabel(d)).join('، ');
+    html+=`<tr${dim}>
+      <td><b>${esc(r.name)}</b></td>
+      <td class="hint">${esc(deptsTxt)}</td>
+      <td><b style="font-size:15px">${num(r.n)}</b></td>
+      <td>${num(r.activeDays)}</td>
+      <td>${r.avg?`<b style="color:${avgColor(r.avg)}">${r.avg.toFixed(1)}</b>`:'—'}</td>
+      <td>${num(r.issues)}</td>
+      <td>${r.res?'<span class="status st-res">'+num(r.res)+'</span>':num(0)}</td>
+      <td>${r.esc?'<span class="status st-esc">'+num(r.esc)+'</span>':num(0)}</td>
+      <td>${satCell}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div></div>';
+  box.innerHTML=html;labelCells(box);
+}
 function viewPhoto(src){
   const ov=document.createElement('div');ov.className='rub-overlay';ov.id='photoOverlay';
   ov.onclick=()=>ov.remove();
@@ -2999,10 +3093,73 @@ function renderStaff(){
     </tr>`;
   });
   html+=`</tbody></table></div></div><p class="hint" style="margin-top:12px">${t('st_staff_note')}</p>`;
+  // ---- Department heads' productivity (supervisor / admin / director only) ----
+  if(['sup','admin','director'].includes(USER.role)){
+    const hrows=headStats();
+    if(hrows.length){
+      const topH=hrows[0];
+      html+=`<div class="section-title" style="margin-top:34px">${t('hs_title')}</div>
+      <p class="hint" style="margin-bottom:14px">${t('hs_sub')}</p>
+      <div class="card"><div style="overflow-x:auto"><table><thead><tr>
+        <th>${t('st_th_name')}</th><th>${t('th_dept')}</th><th>${t('hs_th_res')}</th>
+        <th>${t('th_support_time')}</th><th>${t('th_support_sat')}</th><th>${t('hs_th_overdue')}</th>
+      </tr></thead><tbody>`;
+      hrows.forEach(h=>{
+        let satCell='<span class="hint">—</span>';
+        if(h.avgS!=null){const cls=h.avgS>=80?'good':h.avgS>=50?'warn':'crit';satCell=`<span class="agechip ${cls}">${num(h.avgS)}%</span> <span class="hint">(${num(h.satN)})</span>`;}
+        html+=`<tr>
+          <td><b>${esc(h.name)}</b></td>
+          <td>${esc(deptLabel(h.dept||''))}</td>
+          <td><b style="font-size:15px">${num(h.res)}</b></td>
+          <td>${h.avgT==null?'<span class="hint">—</span>':fmtDur(h.avgT)}</td>
+          <td>${satCell}</td>
+          <td>${h.overdue?`<span class="agechip crit">${num(h.overdue)}</span>`:num(0)}</td>
+        </tr>`;
+      });
+      html+='</tbody></table></div></div>';
+    }
+  }
   box.innerHTML=html;labelCells(box);
 }
 function openStaff(k){stOpen=k;renderStaff();window.scrollTo({top:0,behavior:'smooth'});}
 function closeStaff(){stOpen=null;renderStaff();}
+
+// Productivity of DEPARTMENT HEADS (for supervisor/admin/director): how many escalated
+// problems each head resolved, avg resolution time, post-resolution satisfaction, and overdue count.
+function headStats(){
+  const {start}=stRange(stPeriod);
+  let data=scopedRounds().filter(r=>new Date(r.ts)>=start);
+  if(stDept!=='all')data=data.filter(r=>r.dept===stDept);
+  const map={}; // keyed by resolver name (heads resolve via resolveProblem → supRole='head')
+  data.forEach(r=>(r.problems||[]).forEach(p=>{
+    if(p.supRole!=='head'||!p.supName)return;
+    const k=p.supName;
+    if(!map[k])map[k]={name:k,res:0,times:[],sat:[],dept:r.dept};
+    const m=map[k];
+    m.res++;
+    const ht=hoursBetween(escStart(p),p.resolvedTs);if(ht!=null)m.times.push(ht);
+    if(p.recheck&&p.recheck.score!=null)m.sat.push(p.recheck.score);
+  }));
+  // count overdue (still-escalated, older than ESC_CRIT_D) per head-department
+  const headDeptOf={};
+  STAFF.filter(u=>u.role==='head'&&u.dept).forEach(u=>{headDeptOf[u.name]=u.dept;});
+  const overdueByDept={};
+  data.forEach(r=>(r.problems||[]).forEach(p=>{
+    if(p.status==='escalated'&&!p.external){
+      const age=hoursBetween(escStart(p),new Date().toISOString());
+      if(age!=null&&age/24>=ESC_CRIT_D)overdueByDept[r.dept]=(overdueByDept[r.dept]||0)+1;
+    }
+  }));
+  // include heads in scope who resolved nothing this period
+  STAFF.filter(u=>u.role==='head'&&u.active!==false&&u.dept&&(stDept==='all'?userDepts(USER).includes(u.dept):u.dept===stDept))
+    .forEach(u=>{ if(!map[u.name])map[u.name]={name:u.name,res:0,times:[],sat:[],dept:u.dept}; });
+  return Object.values(map).map(m=>{
+    const dept=headDeptOf[m.name]||m.dept;
+    const avgT=m.times.length?m.times.reduce((a,b)=>a+b,0)/m.times.length:null;
+    const avgS=m.sat.length?Math.round((m.sat.reduce((a,b)=>a+b,0)/m.sat.length/5)*100):null;
+    return {name:m.name,dept,res:m.res,avgT,avgS,satN:m.sat.length,overdue:overdueByDept[dept]||0};
+  }).sort((a,b)=>b.res-a.res||(a.name>b.name?1:-1));
+}
 
 function renderStaffDetail(box,rows){
   const p=rows.find(r=>r.key===stOpen);
@@ -3306,7 +3463,7 @@ function renderUsers(){
     </div>
     <div style="margin-top:14px"><label class="fld req">${t('f_role')}</label>
       <select id="nu_role" onchange="toggleDeptField()" style="max-width:320px">
-        ${['tech','head','sup','director','admin','support'].map(r=>`<option value="${r}">${roleLabel(r)}</option>`).join('')}
+        ${['tech','shift','shiftmgr','head','sup','director','admin','support'].map(r=>`<option value="${r}">${roleLabel(r)}</option>`).join('')}
       </select></div>
     <div id="nu_deptWrap" style="margin-top:14px"></div>
     <div style="margin-top:16px"><button class="btn btn-primary btn-sm" id="addUserBtn" onclick="addUser()">${t('create_account')}</button></div>
@@ -3353,7 +3510,7 @@ function renderEditForm(box,u){
     </div>
     <div style="margin-top:14px"><label class="fld req">${t('f_role')}</label>
       <select id="nu_role" onchange="toggleDeptField()" style="max-width:320px"${self?' disabled':''}>
-        ${['tech','head','sup','director','admin','support'].map(r=>`<option value="${r}"${u.role===r?' selected':''}>${roleLabel(r)}</option>`).join('')}
+        ${['tech','shift','shiftmgr','head','sup','director','admin','support'].map(r=>`<option value="${r}"${u.role===r?' selected':''}>${roleLabel(r)}</option>`).join('')}
       </select>
       ${self?`<p class="hint">${t('self_role_note')}</p>`:''}</div>
     <div id="nu_deptWrap" style="margin-top:14px"></div>
