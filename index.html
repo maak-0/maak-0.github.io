@@ -587,12 +587,17 @@ function isMultiDept(u){return !!u&&(u.role==='sup'||u.role==='admin'||u.role===
 function seesAll(u){return !!u&&(u.role==='sup'||u.role==='admin'||u.role==='director');}
 function userDepts(u){
   if(!u)return[];
-  if(u.role==='tech'||u.role==='head')return u.dept?[u.dept]:[];
+  if(u.role==='head')return u.dept?[u.dept]:[];
+  if(u.role==='tech'){
+    if(Array.isArray(u.depts)&&u.depts.length)return u.depts.includes('*')?DEPT_AR.slice():u.depts.slice();
+    return u.dept?[u.dept]:[];
+  }
   if(u.role==='support')return [];               // support dept scoped by support-queue, not nursing depts
-  // sup/admin/director/shift: depts field. legacy account (null) = all departments
+  // sup/admin/director/shift/shiftmgr: depts field. legacy account (null) = all departments
   const d=(u.depts==null)?['*']:u.depts;
   return d.includes('*')?DEPT_AR.slice():d;
 }
+function multiDeptRounds(u){return !!u&&canDoRounds(u)&&userDepts(u).length>1;} // dropdown vs locked chip in round form
 function seesAllDepts(u){return !!u&&(u.role==='sup'||u.role==='admin'||u.role==='director')&&(u.depts==null||u.depts.includes('*'));}
 function canManageProblems(u){return !!u&&['head','sup','admin','director'].includes(u.role);}
 function canManageUsers(u){return !!u&&u.role==='admin';}
@@ -653,7 +658,7 @@ const I18N={
   e_invalid_email:'صيغة البريد غير صحيحة',e_user_not_found:'لا يوجد حساب بهذا البريد',e_wrong_pass:'كلمة المرور غير صحيحة',e_invalid_cred:'البريد أو كلمة المرور غير صحيحة',e_too_many:'محاولات كثيرة، يُرجى الانتظار قليلاً ثم إعادة المحاولة',e_disabled:'هذا الحساب موقوف',e_in_use:'هذا البريد مستخدم لحساب موجود',e_weak:'كلمة المرور قصيرة (٦ أحرف على الأقل)',
   err_fb_load:'تعذّر تحميل Firebase — يُرجى التأكد من اتصال الإنترنت.',err_server:'تعذّر الاتصال بالخادم.',btn_retry:'🔄 إعادة المحاولة',connecting:'جارِ الاتصال…',e_network:'لا يوجد اتصال بالإنترنت — يُرجى التأكد من الشبكة وإعادة المحاولة',err_unauth:'هذا الحساب غير مُصرّح له بعد. يُراجع قسم الإدارة.',err_load_acct:'تعذّر تحميل بيانات الحساب.',toast_admin_created:'تم إنشاء حساب الإدارة',toast_cloud_lost:'انقطع الاتصال بالسحابة',toast_cloud_savefail:'تعذّر الحفظ في السحابة',
   nr_title:'جولة جديدة',nr_sub:'قيّمي كل بند من ١ (ضعيف) إلى ٥ (ممتاز). أي بند بتقييم ٢ أو أقل يُرصد كمشكلة تلقائياً.',
-  sec_round_info:'بيانات الجولة',f_dept:'القسم',f_pname:'اسم المريض',f_pname_ph:'اختياري',f_mrn:'رقم الملف',f_mrn_ph:'اختياري',th_pname:'اسم المريض',th_mrn:'رقم الملف',optional_word:'(اختياري)',f_room:'رقم الغرفة',f_room_ph:'مثال: ٢١٤',f_asked:'تم سؤال',opt_patient:'مريض',opt_companion:'مرافق',
+  sec_round_info:'بيانات الجولة',f_dept:'القسم',f_pname:'اسم المريض',f_pname_ph:'اختياري',f_mrn:'رقم الملف',f_mrn_ph:'اختياري',th_pname:'اسم المريض',th_mrn:'رقم الملف',optional_word:'(اختياري)',f_room:'رقم الغرفة',f_room_ph:'مثال: ٢١٤',f_bed:'رقم السرير',f_bed_ph:'مثال: ٣',f_asked:'تم سؤال',opt_patient:'مريض',opt_companion:'مرافق',
   sec_eval:'تقييم خدمات التمريض',sec_overall:'التقييم العام والملاحظات',q12:'التقييم العام لخدمات مستشفى الجبيل العام',
   f_liked:'أبرز الجوانب التي أعجبتك أو لم تعجبك',f_liked_ph:'ملاحظات المريض...',f_sugg:'ملاحظات ومقترحات لتحسين الخدمة',f_sugg_ph:'مقترحات...',f_nurse:'اسم ممرض/ة قدّم خدمة استثنائية',f_nurse_ph:'اسم الممرض/ة (اختياري)',extiss_title:'مشكلة خارج التمريض (لقسم مساند)',extiss_help:'عند ذكر المريض شكوى لا تخص التمريض (نظافة، أكل، صيانة، تغذية...) تُسجّل هنا. تصل للمسؤولين ويوجّهونها للقسم المساند المناسب.',extiss_add:'إضافة مشكلة خارج التمريض',extiss_ph:'كتابة شكوى المريض بالتفصيل...',extiss_remove:'حذف',extiss_label:'مشكلة خارج التمريض',extiss_will_route:'⬆ للمنجرز',extiss_desc:'وصف الشكوى',extiss_ex_title:'أمثلة توضّح المقصود:',extiss_ex_laundry:'ملاءات أو أغطية غير نظيفة · مناشف ناقصة · تأخر تبديل المفارش',extiss_ex_food:'الأكل بارد أو متأخر · وجبة غلط · لا تناسب حالة المريض الصحية',extiss_ex_maint:'مكيف/إضاءة خربانة · حمّام معطّل · تسريب ماء',extiss_ex_social:'يحتاج مساعدة اجتماعية',extiss_ex_docs_dep:'الأطباء',extiss_ex_docs:'الطبيب ما زار المريض · تأخر في القرار الطبي',extiss_ex_note:'💡 القاعدة: إذا كانت الشكوى تخص أسئلة التمريض الستة أعلاه (تعريف الطاقم، لطفهم، سرعة الجرس...) تُسجّل في التقييم أعلاه لا هنا. هذا الموضع للشكاوى التي يحلها قسم آخر غير التمريض.',
   next_review:'التالي: مراجعة المشاكل ←',live_notstarted:'لم يبدأ التقييم بعد',live_avg:'متوسط الرضا',live_flagged:'{n} مشكلة مرصودة',live_noflag:'لا مشاكل مرصودة ✅',
@@ -668,7 +673,7 @@ const I18N={
   err_decide:'كل مشكلة لازم تُحل أو تُصعّد قبل الحفظ',toast_saved:'تم حفظ الجولة',toast_saved_esc:' · {n} مشكلة صُعّدت للمسؤولين',err_complete:'أكملي القسم ورقم الغرفة والشخص المُقيّم',err_rateall:'قيّمي كل بنود التمريض قبل المتابعة',
   mr_title:'جولات قسمي',mr_sub:'جولات القسم ومتابعة مشاكلها.',all_title_all:'كل الجولات',all_title_dept:'جولات القسم',all_sub_all:'كل الجولات المسجّلة في النظام.',all_sub_dept:'جولات القسم المسجّلة.',
   export_csv:'⬇ تصدير Excel',exporting:'جارِ التجهيز…',err_export_lib:'تعذّر تحميل مكتبة Excel — يُرجى التأكد من الاتصال بالإنترنت',sh_rounds:'الجولات',sh_issues:'المشاكل',sh_summary:'الملخص',xl_title:'معك · تقرير جولات رضا المرضى',xl_generated:'تاريخ التقرير',xl_scope:'النطاق',xl_count:'عدد الجولات',xl_avg:'متوسط الرضا العام',xl_issues_total:'إجمالي المشاكل',xl_issues_open:'مشاكل مفتوحة/مصعّدة',xl_issues_done:'مشاكل محلولة',xl_by_dept:'المتوسط حسب القسم',xl_by_q:'المتوسط حسب البند',xl_item:'البند',xl_avg_short:'المتوسط',th_overall:'التقييم العام',th_avg:'المتوسط',th_nissues:'عدد المشاكل',th_resolved_n:'محلولة',th_esc_n:'مصعّدة',th_liked:'أبرز الجوانب',th_sugg:'المقترحات',th_nurse:'ممرض متميز',th_status2:'الحالة',th_issue:'المشكلة',th_desc:'وصف المريض',th_plan:'خطة العمل',th_by:'بواسطة',no_data_export:'ما فيه بيانات للتصدير',err_noperm_export:'لا تملكين صلاحية التصدير',toast_exported:'تم تصدير الملف',no_rounds_title:'ما فيه جولات بعد',no_rounds_tech:'ابدئي بجولة جديدة من التبويب الأول.',no_rounds_mgr:'ما تسجّلت جولات في نطاقك بعد.',
-  th_date:'التاريخ',th_dept:'القسم',th_room:'الغرفة',th_asked:'تم سؤال',th_tech:'القائم بالجولة',th_sat:'الرضا',th_issues:'المشاكل',
+  th_date:'التاريخ',th_dept:'القسم',th_room:'الغرفة',th_bed:'السرير',th_asked:'تم سؤال',th_tech:'القائم بالجولة',th_sat:'الرضا',th_issues:'المشاكل',
   badge_open:'{n} مفتوحة',badge_allresolved:'كلها محلولة',badge_noissues:'لا مشاكل',details_btn:'تفاصيل',
   btn_delete_round:'🗑 حذف الجولة',err_noperm_delete:'الحذف مقصور على حساب المالك',confirm_delete_round:'حذف هذه الجولة نهائياً؟\n\n{info}\n\nما يمكن التراجع عن الحذف.',toast_round_deleted:'تم حذف الجولة',err_delete_round:'تعذّر الحذف — يُرجى التأكد من الصلاحية والاتصال',rd_title:'تفاصيل الجولة',by_word:'بواسطة',back:'→ رجوع',kpi_avgsat:'متوسط الرضا',kpi_overall:'التقييم العام',kpi_issues:'المشاكل',sec_ratings:'التقييمات',lbl_liked:'أبرز الجوانب',lbl_sugg:'مقترحات',exc_service:'🌟 خدمة استثنائية: {name}',sec_issues_plans:'المشاكل وخطط العمل',issue_word:'مشكلة',lbl_desc:'الوصف',lbl_tech_plan:'خطة القائم بالجولة',lbl_esc_reason:'سبب التصعيد',lbl_mgr_plan:'خطة المسؤول',
   pr_title:'المشاكل',pr_sub:'المشاكل المصعّدة تحتاج خطة عمل. المحلولة معروضة للمتابعة. أي مسؤول يقدر يكتب الخطة ويقفل.',kpi_needaction:'تحتاج إجراء',kpi_escalated:'مصعّدة',kpi_resolved:'تم حلها',kpi_inscope:'في نطاقك',
@@ -684,7 +689,7 @@ const I18N={
   nodata_title:'لا توجد بيانات',nodata_sub:'ما تسجّلت جولات في نطاقك بعد.',kpi_avgsat_period:'متوسط الرضا ({period})',sat_pct:'{n}% رضا',no_rounds_word:'لا جولات',kpi_roundscount:'عدد الجولات',in_current_period:'في الفترة الحالية',kpi_flagged_issues:'مشاكل مرصودة',open_word:'مفتوحة: {n}',kpi_resolve_rate:'نسبة الحل',resolved_of:'تم حل {a} من {b}',
   sec_trend:'اتجاه الرضا عبر الفترات',sec_strengths:'نقاط القوة والضعف حسب البند',sec_issue_status:'حالة المشاكل (الفترة الحالية)',bar_resolved:'تم الحل',bar_escalated:'مُصعّدة',bar_open:'مفتوحة',sec_by_dept:'حسب القسم (كل الفترات)',no_rounds_period:'لا توجد جولات في هذه الفترة.',no_rounds_yet:'لا توجد جولات مسجّلة بعد.',rounds_unit:'جولة',
   pl_daily:'اليوم',pl_weekly:'هذا الأسبوع',pl_monthly:'هذا الشهر',pl_quarterly:'هذا الربع',pl_yearly:'هذي السنة',week_prefix:'أسبوع',quarter_prefix:'ربع',
-  um_title:'إدارة المستخدمين',um_sub:'إنشاء حسابات الموظفين وتحديد دور كل حساب وقسمه. لا أحد يدخل النظام إلا من يُنشأ هنا.',loading:'جارِ التحميل…',add_staff:'إضافة موظف جديد',f_title:'المسمى الوظيفي',f_title_ph:'مثال: ممرض · فني رعاية مرضى · منسق جودة',th_title:'المسمى الوظيفي',no_title:'—',f_name:'الاسم',f_name_ph:'الاسم الكامل',f_temp_pass:'كلمة المرور المؤقتة',f_pass_ph:'٦ أحرف على الأقل',f_role:'الدور',f_dept_allowed:'الأقسام المسموح بالاطّلاع عليها',depts_hint:'تحديد الأقسام التي يطّلع عليها هذا الحساب، أو اختيار «كل الأقسام».',create_account:'➕ إنشاء الحساب',creating:'جارِ الإنشاء…',accounts_word:'الحسابات ({n})',th_name:'الاسم',th_email:'البريد',th_role:'الدور',th_dept2:'القسم',no_users:'لا يوجد مستخدمون بعد',you_label:'أنت',revoke_access:'إلغاء الوصول',users_note:'ملاحظة: «إلغاء الوصول» يمنع الموظف من دخول النظام فوراً. لحذف الحساب نهائياً من قاعدة المصادقة، يُحذف من Firebase Console ← Authentication.',
+  um_title:'إدارة المستخدمين',um_sub:'إنشاء حسابات الموظفين وتحديد دور كل حساب وقسمه. لا أحد يدخل النظام إلا من يُنشأ هنا.',loading:'جارِ التحميل…',add_staff:'إضافة موظف جديد',f_title:'المسمى الوظيفي',f_title_ph:'مثال: ممرض · فني رعاية مرضى · منسق جودة',th_title:'المسمى الوظيفي',no_title:'—',f_name:'الاسم',f_name_ph:'الاسم الكامل',f_temp_pass:'كلمة المرور المؤقتة',f_pass_ph:'٦ أحرف على الأقل',f_role:'الدور',f_dept_allowed:'الأقسام المسموح بالاطّلاع عليها',f_dept_rounds:'أقسام الجولات',tech_depts_hint:'اختيار قسم واحد أو أكثر. عند اختيار أكثر من قسم، يختار القائم بالجولة القسم عند كل جولة حسب جدوله.',depts_hint:'تحديد الأقسام التي يطّلع عليها هذا الحساب، أو اختيار «كل الأقسام».',create_account:'➕ إنشاء الحساب',creating:'جارِ الإنشاء…',accounts_word:'الحسابات ({n})',th_name:'الاسم',th_email:'البريد',th_role:'الدور',th_dept2:'القسم',no_users:'لا يوجد مستخدمون بعد',you_label:'أنت',revoke_access:'إلغاء الوصول',users_note:'ملاحظة: «إلغاء الوصول» يمنع الموظف من دخول النظام فوراً. لحذف الحساب نهائياً من قاعدة المصادقة، يُحذف من Firebase Console ← Authentication.',
   btn_edit:'تعديل',edit_title:'تعديل بيانات الحساب',save_changes:'💾 حفظ التعديلات',btn_cancel:'إلغاء',toast_user_updated:'تم تحديث بيانات الحساب',self_role_note:'لا يمكن تغيير دور الحساب الشخصي.',admin_all_note:'حساب الإدارة يطّلع على كل الأقسام تلقائياً.',director_all_note:'مديرة إدارة التمريض تطّلع على كل الأقسام والجولات والتقارير تلقائياً (بدون إدارة الحسابات).',f_support_dept:'القسم المساند',support_dept_hint:'هذا الحساب بيشوف بس المشاكل المصعّدة لهذا القسم.',f_support_depts:'الأقسام المساندة',support_depts_hint:'تحديد قسم واحد (حساب قسم مساند)، أو عدة أقسام (رئيس يتابع عدة أقسام مساندة). يطّلع على مشاكل الأقسام المختارة ويحلها فقط.',suplead_title:'رئيس الأقسام المساندة',suplead_sub:'تتابعين وتحلّين مشاكل: {list}',tab_sup_team:'متابعة الموظفين',supteam_title:'متابعة موظفي الخدمات المساندة',supteam_sub:'إنتاجية الأقسام اللي تتابعينها: {list}',supteam_kpi_depts:'الأقسام',supteam_kpi_depts_sub:'تحت إشرافك',supteam_kpi_issues:'إجمالي المشاكل',supteam_kpi_closed_sub:'{n} محلولة',supteam_avg_all:'لكل الأقسام',supteam_sat_sub:'{n} تقييم',supteam_none:'ما فيه نشاط بعد',supteam_none_sub:'عند وصول مشاكل للأقسام وحلها، تظهر الإحصائيات هنا.',supteam_th_active:'أكثر موظف نشاطاً',supteam_th_total:'إجمالي',supteam_th_closed:'محلولة',supteam_th_open:'مفتوحة',tab_shift_team:'متابعة المشرفين',shteam_title:'متابعة مشرفي المواقع الكلينيكية',shteam_sub:'إنتاجية مشرفي المواقع الكلينيكية اللي تحتك: الجولات، المشاكل، والرضا.',shteam_kpi_staff:'المشرفون',shteam_kpi_rounds:'إجمالي الجولات',shteam_none:'ما فيه مشرفو مواقع كلينيكية تحتك بعد',shteam_none_sub:'تُضاف حسابات «مشرف مواقع كلينيكية» على الأقسام من الإدارة، وتظهر إنتاجيتهم هنا.',shteam_th_depts:'الأقسام',err_pick_support:'اختيار القسم المساند',th_status:'الحالة',st_active:'نشط',st_disabled:'موقوف',btn_disable:'إيقاف الوصول',btn_enable:'إعادة التفعيل',confirm_disable:'إيقاف وصول {name}؟ لن يتمكن من دخول النظام، ويمكن إعادة تفعيله في أي وقت.',toast_disabled:'تم إيقاف الحساب',toast_enabled:'تم تفعيل الحساب',err_email_active:'هذا البريد له حساب فعّال بالفعل في القائمة تحت',toast_access_restored:'تم استرجاع الحساب القديم وتفعيله',err_restore_pass:'هذا البريد له حساب قديم في نظام الدخول. تُدخل كلمة المرور الأصلية لاسترجاعه، أو يُحذف الحساب من Firebase Console ← Authentication وتُعاد المحاولة.',hint_disabled_note:'الحساب الموقوف يبقى محفوظاً — يُعاد بضغطة «إعادة التفعيل» دون إنشائه من جديد.',err_fill_user:'أكملي الاسم والبريد وكلمة المرور',err_pass_short:'كلمة المرور ٦ أحرف على الأقل',err_pick_dept:'اختيار قسم واحد على الأقل أو «كل الأقسام»',toast_account_created:'تم إنشاء الحساب',confirm_revoke:'إلغاء وصول {name}؟ لن تتمكن من دخول النظام بعدها.',err_cant_revoke_self:'لا يمكنك إلغاء وصولك',toast_revoked:'تم إلغاء الوصول',err_delete:'تعذّر الحذف',um_locked_title:'غير مصرّح',um_locked_sub:'هذه الصفحة للإدارة فقط.',
   sc_5:'ممتاز',sc_4:'جيد جداً',sc_3:'جيد',sc_2:'مقبول',sc_1:'ضعيف',
   q_q3:'تعريف طاقم التمريض بأنفسهم',q_q4:'شرح واستئذان الفريق قبل الفحوصات والإجراءات (سحب دم، علامات حيوية، إعطاء دواء…)',q_q5:'لطف واهتمام فريق التمريض',q_q6:'سرعة الاستجابة لجرس الاستدعاء',q_q7:'مراعاة الفريق لاحتياجاتك الخاصة أو الشخصية',q_q8:'حرص الفريق على إطلاعك بما يجري'
@@ -719,7 +724,7 @@ const I18N={
   e_invalid_email:'Invalid email format',e_user_not_found:'No account with this email',e_wrong_pass:'Incorrect password',e_invalid_cred:'Incorrect email or password',e_too_many:'Too many attempts, wait a moment and try again',e_disabled:'This account is disabled',e_in_use:'This email is already in use',e_weak:'Password too short (at least 6 characters)',
   err_fb_load:'Failed to load Firebase — check your internet connection.',err_server:'Failed to connect to the server.',btn_retry:'🔄 Try again',connecting:'Connecting…',e_network:'No internet connection — check your network and try again',err_unauth:'Your account is not authorized yet. Contact administration.',err_load_acct:'Failed to load account data.',toast_admin_created:'Administrator account created',toast_cloud_lost:'Cloud connection lost',toast_cloud_savefail:'Failed to save to cloud',
   nr_title:'New Round',nr_sub:'Rate each item from 1 (Poor) to 5 (Excellent). Any item rated 2 or below is automatically flagged as an issue.',
-  sec_round_info:'Round Details',f_dept:'Department',f_pname:'Patient name',f_pname_ph:'Optional',f_mrn:'File no.',f_mrn_ph:'Optional',th_pname:'Patient name',th_mrn:'File no.',optional_word:'(optional)',f_room:'Room Number',f_room_ph:'e.g. 214',f_asked:'Surveyed',opt_patient:'Patient',opt_companion:'Companion',
+  sec_round_info:'Round Details',f_dept:'Department',f_pname:'Patient name',f_pname_ph:'Optional',f_mrn:'File no.',f_mrn_ph:'Optional',th_pname:'Patient name',th_mrn:'File no.',optional_word:'(optional)',f_room:'Room Number',f_room_ph:'e.g. 214',f_bed:'Bed Number',f_bed_ph:'e.g. 3',f_asked:'Surveyed',opt_patient:'Patient',opt_companion:'Companion',
   sec_eval:'Nursing Services Evaluation',sec_overall:'Overall Rating & Comments',q12:'Overall rating of Jubail General Hospital services',
   f_liked:'Aspects you liked or disliked',f_liked_ph:"Patient's remarks...",f_sugg:'Comments & suggestions to improve the service',f_sugg_ph:'Suggestions...',f_nurse:'Name of a nurse who gave exceptional service',f_nurse_ph:"Nurse's name (optional)",extiss_title:'Non-nursing issue (for a support dept)',extiss_help:"If the patient raised a complaint outside nursing (cleaning, food, maintenance, nutrition...), record it here. It goes to the managers, who route it to the right support department.",extiss_add:'Add non-nursing issue',extiss_ph:"Describe the patient's complaint...",extiss_remove:'Remove',extiss_label:'Non-nursing issue',extiss_will_route:'⬆ To managers',extiss_desc:'Complaint description',extiss_ex_title:'Examples of what this means:',extiss_ex_laundry:'Dirty sheets/covers · missing towels · linen not changed',extiss_ex_food:'Food cold or late · wrong meal · unsuitable for the patient',extiss_ex_maint:'Broken AC/lighting · faulty bed or bathroom · water leak',extiss_ex_social:'Needs social support · admission/discharge issue · help for patient or family',extiss_ex_docs_dep:'Physicians (Surgery/Medicine/Ob-Gyn/Peds)',extiss_ex_docs:'Doctor did not visit · delayed medical decision · needs clarification from the doctor',extiss_ex_note:'💡 Rule: if the complaint is about the six nursing questions above (introductions, kindness, call-bell speed...), record it in the rating above, not here. This is only for complaints another department — not nursing — resolves.',
   next_review:'Next: Review Issues →',live_notstarted:'Evaluation not started yet',live_avg:'Satisfaction average',live_flagged:'{n} issue(s) flagged',live_noflag:'No issues flagged ✅',
@@ -734,7 +739,7 @@ const I18N={
   err_decide:'Every issue must be resolved or escalated before saving',toast_saved:'Round saved',toast_saved_esc:' · {n} issue(s) escalated to managers',err_complete:'Complete the department, room number, and surveyed person',err_rateall:'Rate all nursing items before continuing',
   mr_title:'My Department Rounds',mr_sub:"Your department's rounds and issue tracking.",all_title_all:'All Rounds',all_title_dept:'Department Rounds',all_sub_all:'All rounds recorded in the system.',all_sub_dept:"Your department's recorded rounds.",
   export_csv:'⬇ Export to Excel',exporting:'Preparing…',err_export_lib:'Could not load the Excel library — check your internet connection',sh_rounds:'Rounds',sh_issues:'Issues',sh_summary:'Summary',xl_title:"Ma'ak · Patient Satisfaction Rounds Report",xl_generated:'Report date',xl_scope:'Scope',xl_count:'Total rounds',xl_avg:'Overall average satisfaction',xl_issues_total:'Total issues',xl_issues_open:'Open / escalated',xl_issues_done:'Resolved',xl_by_dept:'Average by department',xl_by_q:'Average by item',xl_item:'Item',xl_avg_short:'Average',th_overall:'Overall rating',th_avg:'Average',th_nissues:'Issues',th_resolved_n:'Resolved',th_esc_n:'Escalated',th_liked:'What they liked',th_sugg:'Suggestions',th_nurse:'Outstanding nurse',th_status2:'Status',th_issue:'Issue',th_desc:'Patient description',th_plan:'Action plan',th_by:'By',no_data_export:'Nothing to export',err_noperm_export:"You don't have export permission",toast_exported:'File exported',no_rounds_title:'No rounds yet',no_rounds_tech:'Start a new round from the first tab.',no_rounds_mgr:'No rounds recorded in your scope yet.',
-  th_date:'Date',th_dept:'Department',th_room:'Room',th_asked:'Surveyed',th_tech:'Conducted by',th_sat:'Satisfaction',th_issues:'Issues',
+  th_date:'Date',th_dept:'Department',th_room:'Room',th_bed:'Bed',th_asked:'Surveyed',th_tech:'Conducted by',th_sat:'Satisfaction',th_issues:'Issues',
   badge_open:'{n} open',badge_allresolved:'All resolved',badge_noissues:'No issues',details_btn:'Details',
   btn_delete_round:'🗑 Delete round',err_noperm_delete:'Deleting is restricted to the owner account',confirm_delete_round:'Permanently delete this round?\n\n{info}\n\nThis cannot be undone.',toast_round_deleted:'Round deleted',err_delete_round:'Delete failed — check your permission and connection',rd_title:'Round Details',by_word:'by',back:'← Back',kpi_avgsat:'Avg. Satisfaction',kpi_overall:'Overall Rating',kpi_issues:'Issues',sec_ratings:'Ratings',lbl_liked:'Highlights',lbl_sugg:'Suggestions',exc_service:'🌟 Exceptional service: {name}',sec_issues_plans:'Issues & Action Plans',issue_word:'Issue',lbl_desc:'Description',lbl_tech_plan:"Technician's plan",lbl_esc_reason:'Escalation reason',lbl_mgr_plan:"Manager's plan",
   pr_title:'Issues',pr_sub:'Escalated issues need an action plan. Resolved ones are shown for follow-up. Any manager can write the plan and close.',kpi_needaction:'Needs action',kpi_escalated:'Escalated',kpi_resolved:'Resolved',kpi_inscope:'in your scope',
@@ -750,7 +755,7 @@ const I18N={
   nodata_title:'No data',nodata_sub:'No rounds recorded in your scope yet.',kpi_avgsat_period:'Avg. Satisfaction ({period})',sat_pct:'{n}% satisfaction',no_rounds_word:'No rounds',kpi_roundscount:'Rounds',in_current_period:'in current period',kpi_flagged_issues:'Flagged issues',open_word:'open: {n}',kpi_resolve_rate:'Resolution rate',resolved_of:'{a} of {b} resolved',
   sec_trend:'Satisfaction Trend Across Periods',sec_strengths:'Strengths & Weaknesses by Item',sec_issue_status:'Issue Status (current period)',bar_resolved:'Resolved',bar_escalated:'Escalated',bar_open:'Open',sec_by_dept:'By Department (all periods)',no_rounds_period:'No rounds in this period.',no_rounds_yet:'No rounds recorded yet.',rounds_unit:'rounds',
   pl_daily:'Today',pl_weekly:'This week',pl_monthly:'This month',pl_quarterly:'This quarter',pl_yearly:'This year',week_prefix:'Wk',quarter_prefix:'Q',
-  um_title:'User Management',um_sub:"Create staff accounts and set each person's role and department. No one can access the system unless you create them here.",loading:'Loading…',add_staff:'Add New Staff',f_title:'Job title',f_title_ph:'e.g. Nurse · Patient care technician · Quality coordinator',th_title:'Job title',no_title:'—',f_name:'Name',f_name_ph:'Full name',f_temp_pass:'Temporary password',f_pass_ph:'At least 6 characters',f_role:'Role',f_dept_allowed:'Departments allowed to view',depts_hint:'Check the departments this account can view, or choose "All Departments".',create_account:'➕ Create Account',creating:'Creating…',accounts_word:'Accounts ({n})',th_name:'Name',th_email:'Email',th_role:'Role',th_dept2:'Department',no_users:'No users yet',you_label:'You',revoke_access:'Revoke access',users_note:'Note: "Revoke access" blocks the staff member from signing in immediately. To permanently delete the account, remove it from Firebase Console → Authentication.',
+  um_title:'User Management',um_sub:"Create staff accounts and set each person's role and department. No one can access the system unless you create them here.",loading:'Loading…',add_staff:'Add New Staff',f_title:'Job title',f_title_ph:'e.g. Nurse · Patient care technician · Quality coordinator',th_title:'Job title',no_title:'—',f_name:'Name',f_name_ph:'Full name',f_temp_pass:'Temporary password',f_pass_ph:'At least 6 characters',f_role:'Role',f_dept_allowed:'Departments allowed to view',f_dept_rounds:'Rounds departments',tech_depts_hint:'Pick one or more departments. With more than one, the conductor picks the department per round based on their schedule.',depts_hint:'Check the departments this account can view, or choose "All Departments".',create_account:'➕ Create Account',creating:'Creating…',accounts_word:'Accounts ({n})',th_name:'Name',th_email:'Email',th_role:'Role',th_dept2:'Department',no_users:'No users yet',you_label:'You',revoke_access:'Revoke access',users_note:'Note: "Revoke access" blocks the staff member from signing in immediately. To permanently delete the account, remove it from Firebase Console → Authentication.',
   btn_edit:'Edit',edit_title:'Edit account details',save_changes:'💾 Save changes',btn_cancel:'Cancel',toast_user_updated:'Account updated',self_role_note:"You can't change your own role.",admin_all_note:'An administration account always sees every department.',director_all_note:'The nursing director sees all departments, rounds, and reports automatically (without user management).',f_support_dept:'Support department',support_dept_hint:'This account will only see issues escalated to this department.',f_support_depts:'Support departments',support_depts_hint:'Check one department (a support-dept account), or several (a lead supervising multiple support depts). Sees and resolves issues for the selected departments only.',suplead_title:'Support Departments Lead',suplead_sub:'You follow and resolve issues for: {list}',tab_sup_team:'Team',supteam_title:'Support Team Follow-up',supteam_sub:'Productivity of the departments you supervise: {list}',supteam_kpi_depts:'Departments',supteam_kpi_depts_sub:'under you',supteam_kpi_issues:'Total issues',supteam_kpi_closed_sub:'{n} resolved',supteam_avg_all:'across all depts',supteam_sat_sub:'{n} ratings',supteam_none:'No activity yet',supteam_none_sub:'Once issues reach your departments and get resolved, stats appear here.',supteam_th_active:'Most active staff',supteam_th_total:'Total',supteam_th_closed:'Resolved',supteam_th_open:'Open',tab_shift_team:'Supervisors',shteam_title:'Shift Supervisors Follow-up',shteam_sub:'Productivity of the shift supervisors under you: rounds, issues, and satisfaction.',shteam_kpi_staff:'Supervisors',shteam_kpi_rounds:'Total rounds',shteam_none:'No shift supervisors under you yet',shteam_none_sub:'Add «Clinical Site Staff» accounts on your departments via Administration, and their productivity shows here.',shteam_th_depts:'Departments',err_pick_support:'Choose the support department',th_status:'Status',st_active:'Active',st_disabled:'Disabled',btn_disable:'Disable access',btn_enable:'Re-enable',confirm_disable:'Disable access for {name}? They won\'t be able to sign in, and you can re-enable them anytime.',toast_disabled:'Account disabled',toast_enabled:'Account re-enabled',err_email_active:'This email already has an active account in the list below',toast_access_restored:'Existing account restored and re-enabled',err_restore_pass:'This email already has an account in the sign-in system. Enter its original password to restore it, or delete the account from Firebase Console → Authentication and try again.',hint_disabled_note:'A disabled account is kept — re-enable it with one click instead of creating it again.',err_fill_user:'Complete name, email, and password',err_pass_short:'Password must be at least 6 characters',err_pick_dept:'Choose at least one department or "All Departments"',toast_account_created:'Account created',confirm_revoke:"Revoke access for {name}? They won't be able to sign in afterwards.",err_cant_revoke_self:"You can't revoke your own access",toast_revoked:'Access revoked',err_delete:'Failed to delete',um_locked_title:'Not authorized',um_locked_sub:'This page is for administration only.',
   sc_5:'Excellent',sc_4:'Very good',sc_3:'Good',sc_2:'Fair',sc_1:'Poor',
   q_q3:'Nursing staff introducing themselves',q_q4:'Explaining and asking permission before tests and procedures (blood draw, vitals, medication…)',q_q5:'Courtesy and attentiveness of the nursing team',q_q6:'Speed of response to the call bell',q_q7:'Attention to your special or personal needs',q_q8:'Keeping you informed about what is happening'
@@ -1315,11 +1320,12 @@ function labelCells(root){
 let draft=null;
 function newDraft(){
   let dep='';
-  if(USER){
-    if(USER.role==='tech'&&USER.dept&&USER.dept!=='all')dep=USER.dept;
-    else if(USER.role==='shift'||USER.role==='shiftmgr'){const ds=userDepts(USER);dep=ds[0]||'';}
+  if(USER&&canDoRounds(USER)){
+    const ds=userDepts(USER);
+    if(USER.role==='tech'&&!Array.isArray(USER.depts)&&USER.dept&&USER.dept!=='all')dep=USER.dept;
+    else dep=ds[0]||'';
   }
-  return{dept:dep,room:'',pname:'',ptype:'',ratings:{},liked:'',suggestions:'',nurse:'',problems:[],extIssues:[]};
+  return{dept:dep,room:'',bed:'',pname:'',ptype:'',ratings:{},liked:'',suggestions:'',nurse:'',problems:[],extIssues:[]};
 }
 function viewNew(){
   if(!draft)draft=newDraft();
@@ -1330,16 +1336,20 @@ function viewNew(){
   </div>
   <div class="card card-pad">
     <div class="section-title">${t('sec_round_info')}</div>
-    <div class="grid3">
+    <div class="grid3" style="grid-template-columns:1fr 1fr 1fr 1fr">
       <div>
-        <label class="fld${isShift(USER)?' req':''}">${t('f_dept')}</label>
-        ${isShift(USER)
+        <label class="fld${multiDeptRounds(USER)?' req':''}">${t('f_dept')}</label>
+        ${multiDeptRounds(USER)
           ? `<select id="rdept">${userDepts(USER).map(d=>`<option value="${esc(d)}"${draft.dept===d?' selected':''}>${esc(deptLabel(d))}</option>`).join('')}</select>`
           : `<div class="lockchip">${esc(deptLabel(draft.dept)||'—')} <span>🔒</span></div>`}
       </div>
       <div>
         <label class="fld req">${t('f_room')}</label>
         <input type="text" id="room" value="${esc(draft.room)}" placeholder="${t('f_room_ph')}">
+      </div>
+      <div>
+        <label class="fld">${t('f_bed')} <span class="hint" style="font-weight:600">${t('optional_word')}</span></label>
+        <input type="text" id="bed" value="${esc(draft.bed||'')}" placeholder="${t('f_bed_ph')}">
       </div>
       <div>
         <label class="fld req">${t('f_asked')}</label>
@@ -1410,6 +1420,7 @@ function viewNew(){
   // ptype segment (dept is locked to the technician's department)
   $('#ptypeSeg').onclick=e=>{const o=e.target.closest('.seg-opt');if(!o)return;draft.ptype=o.dataset.v;paintSeg('ptypeSeg',o);};
   $('#room').oninput=e=>draft.room=e.target.value;
+  {const bd=$('#bed');if(bd)bd.oninput=e=>draft.bed=e.target.value;}
   const pn=$('#pname');if(pn)pn.oninput=e=>draft.pname=e.target.value;
   const rd=$('#rdept');if(rd)rd.onchange=e=>{draft.dept=e.target.value;};
   $('#liked').oninput=e=>draft.liked=e.target.value;
@@ -1677,7 +1688,7 @@ async function commitRound(){
   }
   const round={
     id:rid,ts:new Date().toISOString(),
-    dept:draft.dept,room:draft.room.trim(),pname:(draft.pname||'').trim(),ptype:draft.ptype,tech:USER.name,techUid:USER.uid||'',techTitle:USER.title||'',
+    dept:draft.dept,room:draft.room.trim(),bed:(draft.bed||'').trim(),pname:(draft.pname||'').trim(),ptype:draft.ptype,tech:USER.name,techUid:USER.uid||'',techTitle:USER.title||'',
     ratings:{...draft.ratings},liked:draft.liked.trim(),suggestions:draft.suggestions.trim(),nurse:draft.nurse.trim(),
     problems:draft.problems
   };
@@ -1732,13 +1743,13 @@ function roundsList(list,title,sub,scopedForMonths){
     const emptyMsg=(showMonth&&monthFilter!=='all')?t('no_rounds_month'):(USER.role==='tech'?t('no_rounds_tech'):t('no_rounds_mgr'));
     app.innerHTML+=emptyCard('📋',t('no_rounds_title'),emptyMsg);return;
   }
-  let html=`<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>${t('th_date')}</th><th>${t('th_dept')}</th><th>${t('th_room')}</th><th>${t('th_pname')}</th><th>${t('th_asked')}</th><th>${t('th_tech')}</th><th>${t('th_sat')}</th><th>${t('th_issues')}</th><th></th></tr></thead><tbody>`;
+  let html=`<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>${t('th_date')}</th><th>${t('th_dept')}</th><th>${t('th_room')}</th><th>${t('th_bed')}</th><th>${t('th_pname')}</th><th>${t('th_asked')}</th><th>${t('th_tech')}</th><th>${t('th_sat')}</th><th>${t('th_issues')}</th><th></th></tr></thead><tbody>`;
   list.forEach(r=>{
     const avg=roundAvg(r);const p=r.problems;
     const openN=p.filter(x=>x.status!=='resolved').length;
     const badge=p.length? (openN? `<span class="status st-esc">`+t('badge_open',{n:arNum(openN)})+`</span>` : `<span class="status st-res">`+t('badge_allresolved')+`</span>`) : `<span class="tag">`+t('badge_noissues')+`</span>`;
     html+=`<tr>
-      <td>${fmtDate(r.ts)}</td><td>${esc(deptLabel(r.dept))}</td><td>${esc(r.room)}</td><td>${r.pname?esc(r.pname):'<span class="hint">—</span>'}</td><td>${esc(ptypeLabel(r.ptype))}</td><td>${esc(r.tech||'')}</td>
+      <td>${fmtDate(r.ts)}</td><td>${esc(deptLabel(r.dept))}</td><td>${esc(r.room)}</td><td>${r.bed?esc(r.bed):'<span class="hint">—</span>'}</td><td>${r.pname?esc(r.pname):'<span class="hint">—</span>'}</td><td>${esc(ptypeLabel(r.ptype))}</td><td>${esc(r.tech||'')}</td>
       <td><b style="color:${avgColor(avg)}">${avg?avg.toFixed(1):'—'}/5</b></td>
       <td>${badge}</td>
       <td><button class="btn btn-outline btn-sm" onclick="openRound('${r.id}')">${t('details_btn')}</button></td>
@@ -1754,7 +1765,7 @@ function openRound(id){
   const avg=roundAvg(r);
   const app=$('#app');
   app.innerHTML=`<div class="page-head"><div><h2>${t('rd_title')}</h2>
-    <p>${fmtDate(r.ts)} · ${esc(deptLabel(r.dept))} · ${t('room_word')} ${esc(r.room)} · ${esc(ptypeLabel(r.ptype))} · ${t('by_word')} ${esc(r.tech)}</p>
+    <p>${fmtDate(r.ts)} · ${esc(deptLabel(r.dept))} · ${t('room_word')} ${esc(r.room)}${r.bed?' · '+t('f_bed')+' '+esc(r.bed):''} · ${esc(ptypeLabel(r.ptype))} · ${t('by_word')} ${esc(r.tech)}</p>
     ${r.pname?`<p style="margin-top:2px"><b>${t('th_pname')}:</b> ${esc(r.pname)}</p>`:''}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${canDeleteRounds(USER)?`<button class="btn btn-outline btn-sm" style="color:var(--coral);border-color:var(--coral)" onclick="deleteRound('${r.id}')">${t('btn_delete_round')}</button>`:''}
@@ -3236,6 +3247,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
     {header:t('th_date'),key:'date',width:19},
     {header:t('th_dept'),key:'dept',width:28},
     {header:t('th_room'),key:'room',width:10},
+    {header:t('th_bed'),key:'bed',width:8},
     {header:t('th_pname'),key:'pname',width:22},
     {header:t('th_asked'),key:'ptype',width:11},
     {header:t('th_tech'),key:'tech',width:18},
@@ -3252,7 +3264,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
   ];
   xlHeadRow(ws,ws.getRow(1),62);   // rated-item questions are long → taller header
   list.forEach((r,i)=>{
-    const row=ws.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,pname:r.pname||'',ptype:ptypeLabel(r.ptype),tech:r.tech||'',ttitle:r.techTitle||'',
+    const row=ws.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',pname:r.pname||'',ptype:ptypeLabel(r.ptype),tech:r.tech||'',ttitle:r.techTitle||'',
       q3:r.ratings.q3||null,q4:r.ratings.q4||null,q5:r.ratings.q5||null,q6:r.ratings.q6||null,q7:r.ratings.q7||null,q8:r.ratings.q8||null,
       overall:r.ratings.overall||null,avg:roundAvg(r)?Number(roundAvg(r).toFixed(2)):null,
       np:r.problems.length,nr:r.problems.filter(p=>p.status==='resolved').length,
@@ -3289,6 +3301,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
       {header:t('th_date'),key:'date',width:19},
       {header:t('th_dept'),key:'dept',width:26},
       {header:t('th_room'),key:'room',width:10},
+      {header:t('th_bed'),key:'bed',width:8},
       {header:t('th_pname'),key:'pname',width:22},
       {header:t('th_issue'),key:'issue',width:40},
       {header:t('th_status2'),key:'st',width:14},
@@ -3299,7 +3312,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
     xlHeadRow(w2,w2.getRow(1));
     probs.forEach(({p,r},i)=>{
       const st=p.status==='resolved'?t('bar_resolved'):p.status==='escalated'?t('bar_escalated'):t('bar_open');
-      const row=w2.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,pname:r.pname||'',issue:probLabel(p),st,
+      const row=w2.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',pname:r.pname||'',issue:probLabel(p),st,
         desc:p.note||'',plan:p.actionSup||p.actionTech||'',by:p.supName||p.handledBy||r.tech||''});
       row.height=20;
       row.eachCell({includeEmpty:true},c=>{
@@ -3478,7 +3491,7 @@ function renderUsers(){
       <td>${u.title?esc(u.title):'<span class="hint">'+t('no_title')+'</span>'}</td>
       <td>${esc(u.email||'')}</td>
       <td><span class="tag">${ROLE_IC[u.role]||''} ${roleLabel(u.role)}</span></td>
-      <td>${u.role==='director'?t('all_departments'):(u.role==='support'?esc(mySupportDepts(u).map(d=>supportLabel(d)).join(' · ')||'—'):(seesAllDepts(u)?t('all_departments'):(isMultiDept(u)?t('n_departments',{n:num(userDepts(u).length)}):esc(deptLabel(u.dept||'')))))}</td>
+      <td>${u.role==='director'?t('all_departments'):(u.role==='support'?esc(mySupportDepts(u).map(d=>supportLabel(d)).join(' · ')||'—'):(seesAllDepts(u)?t('all_departments'):((isMultiDept(u)||(u.role==='tech'&&Array.isArray(u.depts)&&u.depts.length>1))?t('n_departments',{n:num(userDepts(u).length)}):esc(deptLabel((u.dept)||(Array.isArray(u.depts)&&u.depts[0])||'')))))}</td>
       <td>${u.active===false?'<span class="status st-esc">'+t('st_disabled')+'</span>':'<span class="status st-res">'+t('st_active')+'</span>'}</td>
       <td><div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-outline btn-sm" onclick="startEdit('${u.uid}')">${t('btn_edit')}</button>
@@ -3540,8 +3553,14 @@ async function saveEdit(){
     if(sdl.length===1){upd.supportDept=sdl[0];upd.supportDepts=DEL||[];}
     else {upd.supportDepts=sdl;upd.supportDept=DEL||'';}
     if(DEL){upd.dept=DEL;upd.depts=DEL;}
-  }else if(role==='tech'||role==='head'){
+  }else if(role==='head'){
     upd.dept=$('#nu_dept').value; if(DEL){upd.depts=DEL;upd.supportDept=DEL;}
+  }else if(role==='tech'){
+    const tdl=[...document.querySelectorAll('#nu_techdepts input:checked')].map(i=>i.value);
+    if(!tdl.length){msg(t('err_pick_dept'));return;}
+    if(tdl.length===1){upd.dept=tdl[0];upd.depts=DEL||[];}
+    else {upd.depts=tdl;upd.dept=DEL||'';}
+    if(DEL){upd.supportDept=DEL;}
   }else{
     const checked=[...document.querySelectorAll('#nu_depts input:checked')].map(i=>i.value);
     if(!checked.length){msg(t('err_pick_dept'));return;}
@@ -3572,9 +3591,17 @@ function toggleDeptField(pre){
         ${SUPPORT_DEPTS.map(d=>`<label class="dchk"><input type="checkbox" value="${esc(d.ar)}"${curSupList.includes(d.ar)?' checked':''}> ${esc(LANG==='en'?d.en:d.ar)}</label>`).join('')}
       </div>
       <p class="hint">${t('support_depts_hint')}</p>`;
-  }else if(r==='tech'||r==='head'){
+  }else if(r==='head'){
     wrap.innerHTML=`<label class="fld req">${t('f_dept')}</label>
       <select id="nu_dept" style="max-width:460px">${DEPTS.map(d=>`<option value="${esc(d.ar)}"${curDept===d.ar?' selected':''}>${esc(deptLabel(d.ar))}</option>`).join('')}</select>`;
+  }else if(r==='tech'){
+    // rounds conductor: one or MORE departments (pick several → chooses per round)
+    const techList=(curDepts&&curDepts.length)?curDepts:(curDept?[curDept]:[]);
+    wrap.innerHTML=`<label class="fld req">${t('f_dept_rounds')}</label>
+      <div class="deptchecks" id="nu_techdepts">
+        ${DEPTS.map(d=>`<label class="dchk"><input type="checkbox" value="${esc(d.ar)}"${techList.includes(d.ar)?' checked':''}> ${esc(deptLabel(d.ar))}</label>`).join('')}
+      </div>
+      <p class="hint">${t('tech_depts_hint')}</p>`;
   }else{
     const all=(curDepts==null)?false:curDepts.includes('*');
     wrap.innerHTML=`<label class="fld req">${t('f_dept_allowed')}</label>
@@ -3597,13 +3624,16 @@ async function addUser(){
   const msg=m=>{const e=$('#userMsg');if(e){e.style.color='var(--coral)';e.textContent=m;}};
   if(!name||!email||!pass){msg(t('err_fill_user'));return;}
   if(pass.length<6){msg(t('err_pass_short'));return;}
-  let profDept=null,profDepts=null,profSupport=null,profSupportList=null;
+  let profDept=null,profDepts=null,profSupport=null,profSupportList=null,profTechList=null;
   if(role==='director'){
     // sees all; no dept fields
   }else if(role==='support'){
     profSupportList=[...document.querySelectorAll('#nu_supdepts input:checked')].map(i=>i.value);
     if(!profSupportList.length){msg(t('err_pick_support'));return;}
-  }else if(role==='tech'||role==='head'){profDept=$('#nu_dept').value;}
+  }else if(role==='tech'){
+    profTechList=[...document.querySelectorAll('#nu_techdepts input:checked')].map(i=>i.value);
+    if(!profTechList.length){msg(t('err_pick_dept'));return;}
+  }else if(role==='head'){profDept=$('#nu_dept').value;}
   else{
     const checked=[...document.querySelectorAll('#nu_depts input:checked')].map(i=>i.value);
     if(!checked.length){msg(t('err_pick_dept'));return;}
@@ -3622,6 +3652,10 @@ async function addUser(){
     else prof.supportDepts=profSupportList;
   }
   else if(role==='director'){/* no dept fields */}
+  else if(role==='tech'){
+    if(profTechList.length===1)prof.dept=profTechList[0];
+    else prof.depts=profTechList;
+  }
   else if(profDept!=null)prof.dept=profDept; else prof.depts=profDepts;
   try{
     const sec=firebase.apps.find(a=>a.name==='sec')||firebase.initializeApp(firebaseConfig,'sec');
