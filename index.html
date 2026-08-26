@@ -670,7 +670,7 @@ const I18N={
   age_today:'اليوم',age_days:'منذ {n} يوم',age_oldest:'أقدم مشكلة',age_overdue:'متأخرة',dur_min:'{n} دقيقة',dur_hr:'{n} ساعة',dur_day:'{n} يوم',kpi_resptime:'متوسط زمن الاستجابة',resp_sub:'من التصعيد للإغلاق',no_resp:'ما فيه مشاكل مغلقة بعد',sec_overdue:'متأخرة عن {n} أيام',st_resolved:'✓ تم الحل',st_escalated:'⬆ مُصعّدة',st_open:'● مفتوحة',
   ap_resolved_label:'خطة العمل (Action Plan) — تم حل المشكلة ميدانياً',ap_resolved_ph:'وش الإجراء اللي سويتيه لحل المشكلة؟',esc_reason_label:'سبب التصعيد / ملاحظة للمسؤول',esc_reason_ph:'ليش تحتاج تدخّل المسؤول؟',
   sum_resolved:'تم الحل',sum_escalated:'مُصعّدة',sum_remaining:'متبقّي {n} بدون قرار',
-  err_decide:'كل مشكلة لازم تُحل أو تُصعّد قبل الحفظ',toast_saved:'تم حفظ الجولة',toast_saved_esc:' · {n} مشكلة صُعّدت للمسؤولين',err_complete:'أكملي القسم ورقم الغرفة والشخص المُقيّم',err_rateall:'قيّمي كل بنود التمريض قبل المتابعة',
+  err_decide:'كل مشكلة لازم تُحل أو تُصعّد قبل الحفظ',toast_saved:'تم حفظ الجولة',toast_saved_esc:' · {n} مشكلة صُعّدت للمسؤولين',err_complete:'إكمال القسم ورقم الغرفة ورقم السرير والشخص المُقيّم',err_rateall:'تقييم كل بنود التمريض قبل المتابعة',
   mr_title:'جولات قسمي',mr_sub:'جولات القسم ومتابعة مشاكلها.',all_title_all:'كل الجولات',all_title_dept:'جولات القسم',all_sub_all:'كل الجولات المسجّلة في النظام.',all_sub_dept:'جولات القسم المسجّلة.',
   export_csv:'⬇ تصدير Excel',exporting:'جارِ التجهيز…',err_export_lib:'تعذّر تحميل مكتبة Excel — يُرجى التأكد من الاتصال بالإنترنت',sh_rounds:'الجولات',sh_issues:'المشاكل',sh_summary:'الملخص',xl_title:'معك · تقرير جولات رضا المرضى',xl_generated:'تاريخ التقرير',xl_scope:'النطاق',xl_count:'عدد الجولات',xl_avg:'متوسط الرضا العام',xl_issues_total:'إجمالي المشاكل',xl_issues_open:'مشاكل مفتوحة/مصعّدة',xl_issues_done:'مشاكل محلولة',xl_by_dept:'المتوسط حسب القسم',xl_by_q:'المتوسط حسب البند',xl_item:'البند',xl_avg_short:'المتوسط',th_overall:'التقييم العام',th_avg:'المتوسط',th_nissues:'عدد المشاكل',th_resolved_n:'محلولة',th_esc_n:'مصعّدة',th_liked:'أبرز الجوانب',th_sugg:'المقترحات',th_nurse:'ممرض متميز',th_status2:'الحالة',th_issue:'المشكلة',th_desc:'وصف المريض',th_plan:'خطة العمل',th_by:'بواسطة',no_data_export:'ما فيه بيانات للتصدير',err_noperm_export:'لا تملكين صلاحية التصدير',toast_exported:'تم تصدير الملف',no_rounds_title:'ما فيه جولات بعد',no_rounds_tech:'ابدئي بجولة جديدة من التبويب الأول.',no_rounds_mgr:'ما تسجّلت جولات في نطاقك بعد.',
   th_date:'التاريخ',th_dept:'القسم',th_room:'الغرفة',th_bed:'السرير',th_asked:'تم سؤال',th_tech:'القائم بالجولة',th_sat:'الرضا',th_issues:'المشاكل',
@@ -736,7 +736,7 @@ const I18N={
   age_today:'Today',age_days:'{n} days ago',age_oldest:'Oldest issue',age_overdue:'Overdue',dur_min:'{n} min',dur_hr:'{n} hr',dur_day:'{n} days',kpi_resptime:'Avg. response time',resp_sub:'escalation to closure',no_resp:'No closed issues yet',sec_overdue:'Overdue by {n}+ days',st_resolved:'✓ Resolved',st_escalated:'⬆ Escalated',st_open:'● Open',
   ap_resolved_label:'Action Plan — issue resolved on site',ap_resolved_ph:'What did you do to resolve the issue?',esc_reason_label:'Escalation reason / note to manager',esc_reason_ph:'Why does this need the manager?',
   sum_resolved:'Resolved',sum_escalated:'Escalated',sum_remaining:'{n} still undecided',
-  err_decide:'Every issue must be resolved or escalated before saving',toast_saved:'Round saved',toast_saved_esc:' · {n} issue(s) escalated to managers',err_complete:'Complete the department, room number, and surveyed person',err_rateall:'Rate all nursing items before continuing',
+  err_decide:'Every issue must be resolved or escalated before saving',toast_saved:'Round saved',toast_saved_esc:' · {n} issue(s) escalated to managers',err_complete:'Complete the department, room number, bed number, and surveyed person',err_rateall:'Rate all nursing items before continuing',
   mr_title:'My Department Rounds',mr_sub:"Your department's rounds and issue tracking.",all_title_all:'All Rounds',all_title_dept:'Department Rounds',all_sub_all:'All rounds recorded in the system.',all_sub_dept:"Your department's recorded rounds.",
   export_csv:'⬇ Export to Excel',exporting:'Preparing…',err_export_lib:'Could not load the Excel library — check your internet connection',sh_rounds:'Rounds',sh_issues:'Issues',sh_summary:'Summary',xl_title:"Ma'ak · Patient Satisfaction Rounds Report",xl_generated:'Report date',xl_scope:'Scope',xl_count:'Total rounds',xl_avg:'Overall average satisfaction',xl_issues_total:'Total issues',xl_issues_open:'Open / escalated',xl_issues_done:'Resolved',xl_by_dept:'Average by department',xl_by_q:'Average by item',xl_item:'Item',xl_avg_short:'Average',th_overall:'Overall rating',th_avg:'Average',th_nissues:'Issues',th_resolved_n:'Resolved',th_esc_n:'Escalated',th_liked:'What they liked',th_sugg:'Suggestions',th_nurse:'Outstanding nurse',th_status2:'Status',th_issue:'Issue',th_desc:'Patient description',th_plan:'Action plan',th_by:'By',no_data_export:'Nothing to export',err_noperm_export:"You don't have export permission",toast_exported:'File exported',no_rounds_title:'No rounds yet',no_rounds_tech:'Start a new round from the first tab.',no_rounds_mgr:'No rounds recorded in your scope yet.',
   th_date:'Date',th_dept:'Department',th_room:'Room',th_bed:'Bed',th_asked:'Surveyed',th_tech:'Conducted by',th_sat:'Satisfaction',th_issues:'Issues',
@@ -1348,7 +1348,7 @@ function viewNew(){
         <input type="text" id="room" value="${esc(draft.room)}" placeholder="${t('f_room_ph')}">
       </div>
       <div>
-        <label class="fld">${t('f_bed')} <span class="hint" style="font-weight:600">${t('optional_word')}</span></label>
+        <label class="fld req">${t('f_bed')}</label>
         <input type="text" id="bed" value="${esc(draft.bed||'')}" placeholder="${t('f_bed_ph')}">
       </div>
       <div>
@@ -1530,7 +1530,7 @@ function updateLive(){
 
 /* ---- problems review step ---- */
 function goProblems(){
-  if(!draft.dept||!draft.room.trim()||!draft.ptype){toast(t('err_complete'),'err');return;}
+  if(!draft.dept||!draft.room.trim()||!(draft.bed||'').trim()||!draft.ptype){toast(t('err_complete'),'err');return;}
   const answered=QRATED.filter(q=>draft.ratings[q.k]).length;
   if(answered<QRATED.length){toast(t('err_rateall'),'err');return;}
   // (re)build auto problems from low ratings, keep existing decisions
