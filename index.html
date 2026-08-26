@@ -167,6 +167,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);ba
 .month-sel:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
 textarea{resize:vertical;min-height:70px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.privacy-note{background:#fff8e6;border:1px solid #f0e0b0;color:#8a6d1a;border-radius:10px;padding:10px 14px;font-size:14px;margin:-4px 0 14px;line-height:1.5}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 .seg{display:flex;gap:8px;flex-wrap:wrap}
 .seg-opt{flex:1;min-width:110px;border:1.5px solid var(--line);background:#fbfdfd;border-radius:7px;padding:11px;text-align:center;font-weight:700;font-size:14px;color:var(--text)}
@@ -659,7 +660,7 @@ const I18N={
   err_fb_load:'تعذّر تحميل Firebase — يُرجى التأكد من اتصال الإنترنت.',err_server:'تعذّر الاتصال بالخادم.',btn_retry:'🔄 إعادة المحاولة',connecting:'جارِ الاتصال…',e_network:'لا يوجد اتصال بالإنترنت — يُرجى التأكد من الشبكة وإعادة المحاولة',err_unauth:'هذا الحساب غير مُصرّح له بعد. يُراجع قسم الإدارة.',err_load_acct:'تعذّر تحميل بيانات الحساب.',toast_admin_created:'تم إنشاء حساب الإدارة',toast_cloud_lost:'انقطع الاتصال بالسحابة',toast_cloud_savefail:'تعذّر الحفظ في السحابة',
   nr_title:'جولة جديدة',nr_sub:'قيّمي كل بند من ١ (ضعيف) إلى ٥ (ممتاز). أي بند بتقييم ٢ أو أقل يُرصد كمشكلة تلقائياً.',
   sec_round_info:'بيانات الجولة',f_dept:'القسم',f_pname:'اسم المريض',f_pname_ph:'اختياري',f_mrn:'رقم الملف',f_mrn_ph:'اختياري',th_pname:'اسم المريض',th_mrn:'رقم الملف',optional_word:'(اختياري)',f_room:'رقم الغرفة',f_room_ph:'مثال: ٢١٤',f_bed:'رقم السرير',f_bed_ph:'مثال: ٣',f_asked:'تم سؤال',opt_patient:'مريض',opt_companion:'مرافق',
-  sec_eval:'تقييم خدمات التمريض',sec_overall:'التقييم العام والملاحظات',q12:'التقييم العام لخدمات مستشفى الجبيل العام',
+  sec_eval:'تقييم خدمات التمريض',sec_overall:'التقييم العام والملاحظات',privacy_note:'للخصوصية: لا تُكتب أسماء المرضى أو أي بيانات تعريفية في الملاحظات — تُوثّق ملاحظات الخدمة فقط.',q12:'التقييم العام لخدمات مستشفى الجبيل العام',
   f_liked:'أبرز الجوانب التي أعجبتك أو لم تعجبك',f_liked_ph:'ملاحظات المريض...',f_sugg:'ملاحظات ومقترحات لتحسين الخدمة',f_sugg_ph:'مقترحات...',f_nurse:'اسم ممرض/ة قدّم خدمة استثنائية',f_nurse_ph:'اسم الممرض/ة (اختياري)',extiss_title:'مشكلة خارج التمريض (لقسم مساند)',extiss_help:'عند ذكر المريض شكوى لا تخص التمريض (نظافة، أكل، صيانة، تغذية...) تُسجّل هنا. تصل للمسؤولين ويوجّهونها للقسم المساند المناسب.',extiss_add:'إضافة مشكلة خارج التمريض',extiss_ph:'كتابة شكوى المريض بالتفصيل...',extiss_remove:'حذف',extiss_label:'مشكلة خارج التمريض',extiss_will_route:'⬆ للمنجرز',extiss_desc:'وصف الشكوى',extiss_ex_title:'أمثلة توضّح المقصود:',extiss_ex_laundry:'ملاءات أو أغطية غير نظيفة · مناشف ناقصة · تأخر تبديل المفارش',extiss_ex_food:'الأكل بارد أو متأخر · وجبة غلط · لا تناسب حالة المريض الصحية',extiss_ex_maint:'مكيف/إضاءة خربانة · حمّام معطّل · تسريب ماء',extiss_ex_social:'يحتاج مساعدة اجتماعية',extiss_ex_docs_dep:'الأطباء',extiss_ex_docs:'الطبيب ما زار المريض · تأخر في القرار الطبي',extiss_ex_note:'💡 القاعدة: إذا كانت الشكوى تخص أسئلة التمريض الستة أعلاه (تعريف الطاقم، لطفهم، سرعة الجرس...) تُسجّل في التقييم أعلاه لا هنا. هذا الموضع للشكاوى التي يحلها قسم آخر غير التمريض.',
   next_review:'التالي: مراجعة المشاكل ←',live_notstarted:'لم يبدأ التقييم بعد',live_avg:'متوسط الرضا',live_flagged:'{n} مشكلة مرصودة',live_noflag:'لا مشاكل مرصودة ✅',
   rubric_help:'؟',rubric_title:'معايير التقييم',rubric_pick:'اختيار درجة لعرض المعيار',rubric_intro:'المعيار لكل درجة:',flag_note:'⚠️ رُصدت كمشكلة — بتنحل أو تُصعّد في الخطوة التالية',
@@ -725,7 +726,7 @@ const I18N={
   err_fb_load:'Failed to load Firebase — check your internet connection.',err_server:'Failed to connect to the server.',btn_retry:'🔄 Try again',connecting:'Connecting…',e_network:'No internet connection — check your network and try again',err_unauth:'Your account is not authorized yet. Contact administration.',err_load_acct:'Failed to load account data.',toast_admin_created:'Administrator account created',toast_cloud_lost:'Cloud connection lost',toast_cloud_savefail:'Failed to save to cloud',
   nr_title:'New Round',nr_sub:'Rate each item from 1 (Poor) to 5 (Excellent). Any item rated 2 or below is automatically flagged as an issue.',
   sec_round_info:'Round Details',f_dept:'Department',f_pname:'Patient name',f_pname_ph:'Optional',f_mrn:'File no.',f_mrn_ph:'Optional',th_pname:'Patient name',th_mrn:'File no.',optional_word:'(optional)',f_room:'Room Number',f_room_ph:'e.g. 214',f_bed:'Bed Number',f_bed_ph:'e.g. 3',f_asked:'Surveyed',opt_patient:'Patient',opt_companion:'Companion',
-  sec_eval:'Nursing Services Evaluation',sec_overall:'Overall Rating & Comments',q12:'Overall rating of Jubail General Hospital services',
+  sec_eval:'Nursing Services Evaluation',sec_overall:'Overall Rating & Comments',privacy_note:'For privacy: do not write patient names or any identifying details in the notes — record service feedback only.',q12:'Overall rating of Jubail General Hospital services',
   f_liked:'Aspects you liked or disliked',f_liked_ph:"Patient's remarks...",f_sugg:'Comments & suggestions to improve the service',f_sugg_ph:'Suggestions...',f_nurse:'Name of a nurse who gave exceptional service',f_nurse_ph:"Nurse's name (optional)",extiss_title:'Non-nursing issue (for a support dept)',extiss_help:"If the patient raised a complaint outside nursing (cleaning, food, maintenance, nutrition...), record it here. It goes to the managers, who route it to the right support department.",extiss_add:'Add non-nursing issue',extiss_ph:"Describe the patient's complaint...",extiss_remove:'Remove',extiss_label:'Non-nursing issue',extiss_will_route:'⬆ To managers',extiss_desc:'Complaint description',extiss_ex_title:'Examples of what this means:',extiss_ex_laundry:'Dirty sheets/covers · missing towels · linen not changed',extiss_ex_food:'Food cold or late · wrong meal · unsuitable for the patient',extiss_ex_maint:'Broken AC/lighting · faulty bed or bathroom · water leak',extiss_ex_social:'Needs social support · admission/discharge issue · help for patient or family',extiss_ex_docs_dep:'Physicians (Surgery/Medicine/Ob-Gyn/Peds)',extiss_ex_docs:'Doctor did not visit · delayed medical decision · needs clarification from the doctor',extiss_ex_note:'💡 Rule: if the complaint is about the six nursing questions above (introductions, kindness, call-bell speed...), record it in the rating above, not here. This is only for complaints another department — not nursing — resolves.',
   next_review:'Next: Review Issues →',live_notstarted:'Evaluation not started yet',live_avg:'Satisfaction average',live_flagged:'{n} issue(s) flagged',live_noflag:'No issues flagged ✅',
   rubric_help:'?',rubric_title:'Scoring guide',rubric_pick:'Pick a score to see its criterion',rubric_intro:'Criterion for each score:',flag_note:'⚠️ Flagged as an issue — resolve or escalate it in the next step',
@@ -1359,17 +1360,12 @@ function viewNew(){
         </div>
       </div>
     </div>
-    <div style="margin-top:14px">
-      <div>
-        <label class="fld">${t('f_pname')} <span class="hint" style="font-weight:600">${t('optional_word')}</span></label>
-        <input type="text" id="pname" value="${esc(draft.pname||'')}" placeholder="${t('f_pname_ph')}">
-      </div>
-    </div>
 
     <div class="section-title">${t('sec_eval')}</div>
     <div id="qlist"></div>
 
     <div class="section-title">${t('sec_overall')}</div>
+    <div class="privacy-note">🔒 ${t('privacy_note')}</div>
     <div class="qblock" style="background:#fbfdfd;border-color:var(--line)">
       <div class="qtitle"><span class="n">${num(12)}</span> ${t('q12')}</div>
       <div class="scale" id="overallScale"></div>
@@ -1421,7 +1417,6 @@ function viewNew(){
   $('#ptypeSeg').onclick=e=>{const o=e.target.closest('.seg-opt');if(!o)return;draft.ptype=o.dataset.v;paintSeg('ptypeSeg',o);};
   $('#room').oninput=e=>draft.room=e.target.value;
   {const bd=$('#bed');if(bd)bd.oninput=e=>draft.bed=e.target.value;}
-  const pn=$('#pname');if(pn)pn.oninput=e=>draft.pname=e.target.value;
   const rd=$('#rdept');if(rd)rd.onchange=e=>{draft.dept=e.target.value;};
   $('#liked').oninput=e=>draft.liked=e.target.value;
   $('#suggestions').oninput=e=>draft.suggestions=e.target.value;
@@ -1688,7 +1683,7 @@ async function commitRound(){
   }
   const round={
     id:rid,ts:new Date().toISOString(),
-    dept:draft.dept,room:draft.room.trim(),bed:(draft.bed||'').trim(),pname:(draft.pname||'').trim(),ptype:draft.ptype,tech:USER.name,techUid:USER.uid||'',techTitle:USER.title||'',
+    dept:draft.dept,room:draft.room.trim(),bed:(draft.bed||'').trim(),ptype:draft.ptype,tech:USER.name,techUid:USER.uid||'',techTitle:USER.title||'',
     ratings:{...draft.ratings},liked:draft.liked.trim(),suggestions:draft.suggestions.trim(),nurse:draft.nurse.trim(),
     problems:draft.problems
   };
@@ -1743,13 +1738,13 @@ function roundsList(list,title,sub,scopedForMonths){
     const emptyMsg=(showMonth&&monthFilter!=='all')?t('no_rounds_month'):(USER.role==='tech'?t('no_rounds_tech'):t('no_rounds_mgr'));
     app.innerHTML+=emptyCard('📋',t('no_rounds_title'),emptyMsg);return;
   }
-  let html=`<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>${t('th_date')}</th><th>${t('th_dept')}</th><th>${t('th_room')}</th><th>${t('th_bed')}</th><th>${t('th_pname')}</th><th>${t('th_asked')}</th><th>${t('th_tech')}</th><th>${t('th_sat')}</th><th>${t('th_issues')}</th><th></th></tr></thead><tbody>`;
+  let html=`<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>${t('th_date')}</th><th>${t('th_dept')}</th><th>${t('th_room')}</th><th>${t('th_bed')}</th><th>${t('th_asked')}</th><th>${t('th_tech')}</th><th>${t('th_sat')}</th><th>${t('th_issues')}</th><th></th></tr></thead><tbody>`;
   list.forEach(r=>{
     const avg=roundAvg(r);const p=r.problems;
     const openN=p.filter(x=>x.status!=='resolved').length;
     const badge=p.length? (openN? `<span class="status st-esc">`+t('badge_open',{n:arNum(openN)})+`</span>` : `<span class="status st-res">`+t('badge_allresolved')+`</span>`) : `<span class="tag">`+t('badge_noissues')+`</span>`;
     html+=`<tr>
-      <td>${fmtDate(r.ts)}</td><td>${esc(deptLabel(r.dept))}</td><td>${esc(r.room)}</td><td>${r.bed?esc(r.bed):'<span class="hint">—</span>'}</td><td>${r.pname?esc(r.pname):'<span class="hint">—</span>'}</td><td>${esc(ptypeLabel(r.ptype))}</td><td>${esc(r.tech||'')}</td>
+      <td>${fmtDate(r.ts)}</td><td>${esc(deptLabel(r.dept))}</td><td>${esc(r.room)}</td><td>${r.bed?esc(r.bed):'<span class="hint">—</span>'}</td><td>${esc(ptypeLabel(r.ptype))}</td><td>${esc(r.tech||'')}</td>
       <td><b style="color:${avgColor(avg)}">${avg?avg.toFixed(1):'—'}/5</b></td>
       <td>${badge}</td>
       <td><button class="btn btn-outline btn-sm" onclick="openRound('${r.id}')">${t('details_btn')}</button></td>
@@ -1766,7 +1761,7 @@ function openRound(id){
   const app=$('#app');
   app.innerHTML=`<div class="page-head"><div><h2>${t('rd_title')}</h2>
     <p>${fmtDate(r.ts)} · ${esc(deptLabel(r.dept))} · ${t('room_word')} ${esc(r.room)}${r.bed?' · '+t('f_bed')+' '+esc(r.bed):''} · ${esc(ptypeLabel(r.ptype))} · ${t('by_word')} ${esc(r.tech)}</p>
-    ${r.pname?`<p style="margin-top:2px"><b>${t('th_pname')}:</b> ${esc(r.pname)}</p>`:''}</div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${canDeleteRounds(USER)?`<button class="btn btn-outline btn-sm" style="color:var(--coral);border-color:var(--coral)" onclick="deleteRound('${r.id}')">${t('btn_delete_round')}</button>`:''}
       <button class="btn btn-outline btn-sm" onclick="render()">${t('back')}</button>
@@ -3248,7 +3243,6 @@ async function exportCSV(){ // kept name: called from the toolbar button
     {header:t('th_dept'),key:'dept',width:28},
     {header:t('th_room'),key:'room',width:10},
     {header:t('th_bed'),key:'bed',width:8},
-    {header:t('th_pname'),key:'pname',width:22},
     {header:t('th_asked'),key:'ptype',width:11},
     {header:t('th_tech'),key:'tech',width:18},
     {header:t('th_title'),key:'ttitle',width:20},
@@ -3264,7 +3258,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
   ];
   xlHeadRow(ws,ws.getRow(1),62);   // rated-item questions are long → taller header
   list.forEach((r,i)=>{
-    const row=ws.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',pname:r.pname||'',ptype:ptypeLabel(r.ptype),tech:r.tech||'',ttitle:r.techTitle||'',
+    const row=ws.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',ptype:ptypeLabel(r.ptype),tech:r.tech||'',ttitle:r.techTitle||'',
       q3:r.ratings.q3||null,q4:r.ratings.q4||null,q5:r.ratings.q5||null,q6:r.ratings.q6||null,q7:r.ratings.q7||null,q8:r.ratings.q8||null,
       overall:r.ratings.overall||null,avg:roundAvg(r)?Number(roundAvg(r).toFixed(2)):null,
       np:r.problems.length,nr:r.problems.filter(p=>p.status==='resolved').length,
@@ -3278,7 +3272,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
     });
     row.getCell('date').numFmt='yyyy-mm-dd hh:mm';
     ['liked','sugg'].forEach(k=>{row.getCell(k).alignment={vertical:'middle',horizontal:rtl?'right':'left',wrapText:true};});
-    ['dept','pname','ttitle'].forEach(k=>{row.getCell(k).alignment={vertical:'middle',horizontal:rtl?'right':'left'};});
+    ['dept','ttitle'].forEach(k=>{row.getCell(k).alignment={vertical:'middle',horizontal:rtl?'right':'left'};});
     // colour the rating cells
     [...QRATED.map(q=>q.k),'overall','avg'].forEach(k=>{
       const c=row.getCell(k);const v=Number(c.value);
@@ -3302,7 +3296,6 @@ async function exportCSV(){ // kept name: called from the toolbar button
       {header:t('th_dept'),key:'dept',width:26},
       {header:t('th_room'),key:'room',width:10},
       {header:t('th_bed'),key:'bed',width:8},
-      {header:t('th_pname'),key:'pname',width:22},
       {header:t('th_issue'),key:'issue',width:40},
       {header:t('th_status2'),key:'st',width:14},
       {header:t('th_desc'),key:'desc',width:34},
@@ -3312,7 +3305,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
     xlHeadRow(w2,w2.getRow(1));
     probs.forEach(({p,r},i)=>{
       const st=p.status==='resolved'?t('bar_resolved'):p.status==='escalated'?t('bar_escalated'):t('bar_open');
-      const row=w2.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',pname:r.pname||'',issue:probLabel(p),st,
+      const row=w2.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',issue:probLabel(p),st,
         desc:p.note||'',plan:p.actionSup||p.actionTech||'',by:p.supName||p.handledBy||r.tech||''});
       row.height=20;
       row.eachCell({includeEmpty:true},c=>{
