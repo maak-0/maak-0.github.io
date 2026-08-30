@@ -169,6 +169,9 @@ textarea{resize:vertical;min-height:70px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .privacy-note{background:#fff8e6;border:1px solid #f0e0b0;color:#8a6d1a;border-radius:10px;padding:10px 14px;font-size:14px;margin:-4px 0 14px;line-height:1.5}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-round{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px}
+@media(max-width:820px){.grid-round{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.grid-round{grid-template-columns:1fr}}
 .seg{display:flex;gap:8px;flex-wrap:wrap}
 .seg-opt{flex:1;min-width:110px;border:1.5px solid var(--line);background:#fbfdfd;border-radius:7px;padding:11px;text-align:center;font-weight:700;font-size:14px;color:var(--text)}
 .seg-opt.on{border-color:var(--teal);background:var(--teal-soft);color:var(--ink)}
@@ -1348,7 +1351,7 @@ function viewNew(){
   </div>
   <div class="card card-pad">
     <div class="section-title">${t('sec_round_info')}</div>
-    <div class="grid3" style="grid-template-columns:1fr 1fr 1fr 1fr">
+    <div class="grid-round">
       <div>
         <label class="fld${multiDeptRounds(USER)?' req':''}">${t('f_dept')}</label>
         ${multiDeptRounds(USER)
