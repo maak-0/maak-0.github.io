@@ -551,6 +551,14 @@ const NOTIF_ICON='data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.or
    ESC_CRIT_D  : بعد كم يوم تصير حرجة (تنبيه أحمر)
    REPEAT_MIN  : كم تكرار للبند في نفس القسم حتى يُعتبر خللاً متكرراً */
 const SAT_TARGET=90, ESC_WARN_D=3, ESC_CRIT_D=7, REPEAT_MIN=3;
+const EDIT_WINDOW_H=2; // hours after submitting a round in which the conductor can still edit the action taken
+function canEditAction(r){ // the round's own conductor, within the window
+  if(!USER||!r)return false;
+  const own=r.techUid?r.techUid===USER.uid:r.tech===USER.name;
+  if(!own)return false;
+  const hrs=(Date.now()-new Date(r.ts).getTime())/3600000;
+  return hrs>=0&&hrs<EDIT_WINDOW_H;
+}
 
 const ROLE   ={tech:'القائم بالجولة',head:'رئيس القسم',sup:'مشرف الأقسام',admin:'الإدارة'};
 const ROLE_IC={tech:'🩺',head:'🧑‍⚕️',sup:'👩‍⚕️',admin:'🏛️',director:'⭐',support:'🛠️',shift:'🌙',shiftmgr:'🌗'};
@@ -599,6 +607,9 @@ function userDepts(u){
   return d.includes('*')?DEPT_AR.slice():d;
 }
 function multiDeptRounds(u){return !!u&&canDoRounds(u)&&userDepts(u).length>1;} // dropdown vs locked chip in round form
+// medical/surgical wards that need a جهة (باطنية/جراحة) sub-field
+const MEDSURG_DEPTS=['جناح الرجال (باطني/جراحي)','جناح النساء (باطني/جراحي)'];
+function isMedSurg(dep){return MEDSURG_DEPTS.includes(dep);}
 function seesAllDepts(u){return !!u&&(u.role==='sup'||u.role==='admin'||u.role==='director')&&(u.depts==null||u.depts.includes('*'));}
 function canManageProblems(u){return !!u&&['head','sup','admin','director'].includes(u.role);}
 function canManageUsers(u){return !!u&&u.role==='admin';}
@@ -659,7 +670,7 @@ const I18N={
   e_invalid_email:'صيغة البريد غير صحيحة',e_user_not_found:'لا يوجد حساب بهذا البريد',e_wrong_pass:'كلمة المرور غير صحيحة',e_invalid_cred:'البريد أو كلمة المرور غير صحيحة',e_too_many:'محاولات كثيرة، يُرجى الانتظار قليلاً ثم إعادة المحاولة',e_disabled:'هذا الحساب موقوف',e_in_use:'هذا البريد مستخدم لحساب موجود',e_weak:'كلمة المرور قصيرة (٦ أحرف على الأقل)',
   err_fb_load:'تعذّر تحميل Firebase — يُرجى التأكد من اتصال الإنترنت.',err_server:'تعذّر الاتصال بالخادم.',btn_retry:'🔄 إعادة المحاولة',connecting:'جارِ الاتصال…',e_network:'لا يوجد اتصال بالإنترنت — يُرجى التأكد من الشبكة وإعادة المحاولة',err_unauth:'هذا الحساب غير مُصرّح له بعد. يُراجع قسم الإدارة.',err_load_acct:'تعذّر تحميل بيانات الحساب.',toast_admin_created:'تم إنشاء حساب الإدارة',toast_cloud_lost:'انقطع الاتصال بالسحابة',toast_cloud_savefail:'تعذّر الحفظ في السحابة',
   nr_title:'جولة جديدة',nr_sub:'قيّمي كل بند من ١ (ضعيف) إلى ٥ (ممتاز). أي بند بتقييم ٢ أو أقل يُرصد كمشكلة تلقائياً.',
-  sec_round_info:'بيانات الجولة',f_dept:'القسم',f_pname:'اسم المريض',f_pname_ph:'اختياري',f_mrn:'رقم الملف',f_mrn_ph:'اختياري',th_pname:'اسم المريض',th_mrn:'رقم الملف',optional_word:'(اختياري)',f_room:'رقم الغرفة',f_room_ph:'مثال: ٢١٤',f_bed:'رقم السرير',f_bed_ph:'مثال: ٣',f_asked:'تم سؤال',opt_patient:'مريض',opt_companion:'مرافق',
+  sec_round_info:'بيانات الجولة',f_dept:'القسم',f_pname:'اسم المريض',f_pname_ph:'اختياري',f_mrn:'رقم الملف',f_mrn_ph:'اختياري',th_pname:'اسم المريض',th_mrn:'رقم الملف',optional_word:'(اختياري)',f_room:'رقم الغرفة',f_room_ph:'مثال: ٢١٤',f_bed:'رقم السرير',f_bed_ph:'مثال: ٣',f_jiha:'الجهة',jiha_med:'باطنية',jiha_surg:'جراحة',th_jiha:'الجهة',f_asked:'تم سؤال',opt_patient:'مريض',opt_companion:'مرافق',
   sec_eval:'تقييم خدمات التمريض',sec_overall:'التقييم العام والملاحظات',privacy_note:'للخصوصية: لا تُكتب أسماء المرضى أو أي بيانات تعريفية في الملاحظات — تُوثّق ملاحظات الخدمة فقط.',q12:'التقييم العام لخدمات مستشفى الجبيل العام',
   f_liked:'أبرز الجوانب التي أعجبتك أو لم تعجبك',f_liked_ph:'ملاحظات المريض...',f_sugg:'ملاحظات ومقترحات لتحسين الخدمة',f_sugg_ph:'مقترحات...',f_nurse:'اسم ممرض/ة قدّم خدمة استثنائية',f_nurse_ph:'اسم الممرض/ة (اختياري)',extiss_title:'مشكلة خارج التمريض (لقسم مساند)',extiss_help:'عند ذكر المريض شكوى لا تخص التمريض (نظافة، أكل، صيانة، تغذية...) تُسجّل هنا. تصل للمسؤولين ويوجّهونها للقسم المساند المناسب.',extiss_add:'إضافة مشكلة خارج التمريض',extiss_ph:'كتابة شكوى المريض بالتفصيل...',extiss_remove:'حذف',extiss_label:'مشكلة خارج التمريض',extiss_will_route:'⬆ للمنجرز',extiss_desc:'وصف الشكوى',extiss_ex_title:'أمثلة توضّح المقصود:',extiss_ex_laundry:'ملاءات أو أغطية غير نظيفة · مناشف ناقصة · تأخر تبديل المفارش',extiss_ex_food:'الأكل بارد أو متأخر · وجبة غلط · لا تناسب حالة المريض الصحية',extiss_ex_maint:'مكيف/إضاءة خربانة · حمّام معطّل · تسريب ماء',extiss_ex_social:'يحتاج مساعدة اجتماعية',extiss_ex_docs_dep:'الأطباء',extiss_ex_docs:'الطبيب ما زار المريض · تأخر في القرار الطبي',extiss_ex_note:'💡 القاعدة: إذا كانت الشكوى تخص أسئلة التمريض الستة أعلاه (تعريف الطاقم، لطفهم، سرعة الجرس...) تُسجّل في التقييم أعلاه لا هنا. هذا الموضع للشكاوى التي يحلها قسم آخر غير التمريض.',
   next_review:'التالي: مراجعة المشاكل ←',live_notstarted:'لم يبدأ التقييم بعد',live_avg:'متوسط الرضا',live_flagged:'{n} مشكلة مرصودة',live_noflag:'لا مشاكل مرصودة ✅',
@@ -671,12 +682,12 @@ const I18N={
   age_today:'اليوم',age_days:'منذ {n} يوم',age_oldest:'أقدم مشكلة',age_overdue:'متأخرة',dur_min:'{n} دقيقة',dur_hr:'{n} ساعة',dur_day:'{n} يوم',kpi_resptime:'متوسط زمن الاستجابة',resp_sub:'من التصعيد للإغلاق',no_resp:'ما فيه مشاكل مغلقة بعد',sec_overdue:'متأخرة عن {n} أيام',st_resolved:'✓ تم الحل',st_escalated:'⬆ مُصعّدة',st_open:'● مفتوحة',
   ap_resolved_label:'خطة العمل (Action Plan) — تم حل المشكلة ميدانياً',ap_resolved_ph:'وش الإجراء اللي سويتيه لحل المشكلة؟',esc_reason_label:'سبب التصعيد / ملاحظة للمسؤول',esc_reason_ph:'ليش تحتاج تدخّل المسؤول؟',
   sum_resolved:'تم الحل',sum_escalated:'مُصعّدة',sum_remaining:'متبقّي {n} بدون قرار',
-  err_decide:'كل مشكلة لازم تُحل أو تُصعّد قبل الحفظ',toast_saved:'تم حفظ الجولة',toast_saved_esc:' · {n} مشكلة صُعّدت للمسؤولين',err_complete:'إكمال القسم ورقم الغرفة ورقم السرير والشخص المُقيّم',err_rateall:'تقييم كل بنود التمريض قبل المتابعة',
+  err_decide:'كل مشكلة لازم تُحل أو تُصعّد قبل الحفظ',toast_saved:'تم حفظ الجولة',toast_saved_esc:' · {n} مشكلة صُعّدت للمسؤولين',err_complete:'إكمال القسم ورقم الغرفة ورقم السرير والشخص المُقيّم',err_rateall:'تقييم كل بنود التمريض قبل المتابعة',err_jiha:'تحديد الجهة (باطنية/جراحة)',
   mr_title:'جولات قسمي',mr_sub:'جولات القسم ومتابعة مشاكلها.',all_title_all:'كل الجولات',all_title_dept:'جولات القسم',all_sub_all:'كل الجولات المسجّلة في النظام.',all_sub_dept:'جولات القسم المسجّلة.',
   export_csv:'⬇ تصدير Excel',exporting:'جارِ التجهيز…',err_export_lib:'تعذّر تحميل مكتبة Excel — يُرجى التأكد من الاتصال بالإنترنت',sh_rounds:'الجولات',sh_issues:'المشاكل',sh_summary:'الملخص',xl_title:'معك · تقرير جولات رضا المرضى',xl_generated:'تاريخ التقرير',xl_scope:'النطاق',xl_count:'عدد الجولات',xl_avg:'متوسط الرضا العام',xl_issues_total:'إجمالي المشاكل',xl_issues_open:'مشاكل مفتوحة/مصعّدة',xl_issues_done:'مشاكل محلولة',xl_by_dept:'المتوسط حسب القسم',xl_by_q:'المتوسط حسب البند',xl_item:'البند',xl_avg_short:'المتوسط',th_overall:'التقييم العام',th_avg:'المتوسط',th_nissues:'عدد المشاكل',th_resolved_n:'محلولة',th_esc_n:'مصعّدة',th_liked:'أبرز الجوانب',th_sugg:'المقترحات',th_nurse:'ممرض متميز',th_status2:'الحالة',th_issue:'المشكلة',th_desc:'وصف المريض',th_plan:'خطة العمل',th_by:'بواسطة',no_data_export:'ما فيه بيانات للتصدير',err_noperm_export:'لا تملكين صلاحية التصدير',toast_exported:'تم تصدير الملف',no_rounds_title:'ما فيه جولات بعد',no_rounds_tech:'ابدئي بجولة جديدة من التبويب الأول.',no_rounds_mgr:'ما تسجّلت جولات في نطاقك بعد.',
   th_date:'التاريخ',th_dept:'القسم',th_room:'الغرفة',th_bed:'السرير',th_asked:'تم سؤال',th_tech:'القائم بالجولة',th_sat:'الرضا',th_issues:'المشاكل',
   badge_open:'{n} مفتوحة',badge_allresolved:'كلها محلولة',badge_noissues:'لا مشاكل',details_btn:'تفاصيل',
-  btn_delete_round:'🗑 حذف الجولة',err_noperm_delete:'الحذف مقصور على حساب المالك',confirm_delete_round:'حذف هذه الجولة نهائياً؟\n\n{info}\n\nما يمكن التراجع عن الحذف.',toast_round_deleted:'تم حذف الجولة',err_delete_round:'تعذّر الحذف — يُرجى التأكد من الصلاحية والاتصال',rd_title:'تفاصيل الجولة',by_word:'بواسطة',back:'→ رجوع',kpi_avgsat:'متوسط الرضا',kpi_overall:'التقييم العام',kpi_issues:'المشاكل',sec_ratings:'التقييمات',lbl_liked:'أبرز الجوانب',lbl_sugg:'مقترحات',exc_service:'🌟 خدمة استثنائية: {name}',sec_issues_plans:'المشاكل وخطط العمل',issue_word:'مشكلة',lbl_desc:'الوصف',lbl_tech_plan:'خطة القائم بالجولة',lbl_esc_reason:'سبب التصعيد',lbl_mgr_plan:'خطة المسؤول',
+  btn_delete_round:'🗑 حذف الجولة',err_noperm_delete:'الحذف مقصور على حساب المالك',confirm_delete_round:'حذف هذه الجولة نهائياً؟\n\n{info}\n\nما يمكن التراجع عن الحذف.',toast_round_deleted:'تم حذف الجولة',err_delete_round:'تعذّر الحذف — يُرجى التأكد من الصلاحية والاتصال',rd_title:'تفاصيل الجولة',by_word:'بواسطة',back:'→ رجوع',kpi_avgsat:'متوسط الرضا',kpi_overall:'التقييم العام',kpi_issues:'المشاكل',sec_ratings:'التقييمات',lbl_liked:'أبرز الجوانب',lbl_sugg:'مقترحات',exc_service:'🌟 خدمة استثنائية: {name}',sec_issues_plans:'المشاكل وخطط العمل',issue_word:'مشكلة',lbl_desc:'الوصف',lbl_tech_plan:'خطة القائم بالجولة',lbl_esc_reason:'سبب التصعيد',lbl_mgr_plan:'خطة المسؤول',edit_action_btn:'تعديل الإجراء',edit_action_left:'متاح التعديل لمدة {n}',edit_action_expired:'انتهت مهلة التعديل (ساعتان)',edit_action_hint:'يمكن تعديل الإجراء المتخذ خلال ساعتين من رفع الجولة.',toast_action_saved:'تم تحديث الإجراء',h_short:'س',m_short:'د',
   pr_title:'المشاكل',pr_sub:'المشاكل المصعّدة تحتاج خطة عمل. المحلولة معروضة للمتابعة. أي مسؤول يقدر يكتب الخطة ويقفل.',kpi_needaction:'تحتاج إجراء',kpi_escalated:'مصعّدة',kpi_resolved:'تم حلها',kpi_inscope:'في نطاقك',
   esc_alert:'تصعيد جديد في {dept}',sup_alert:'وصلت {n} مشكلة جديدة للقسم',notif_esc_title:'معك · تصعيد جديد',notif_sup_title:'معك · مشكلة واردة',notif_ask:'تفعيل التنبيهات على الجهاز عند أي تصعيد جديد؟',notif_enable:'تفعيل التنبيهات',notif_later:'لاحقاً',notif_on:'تم تفعيل التنبيهات',esc_alert_more:' (و{n} غيره)',esc_banner:'عندك {n} تصعيد جديد يحتاج إجراء',esc_banner_go:'عرض المشاكل',
   wa_share:'واتساب',wa_share_title:'إرسال تنبيه واتساب',wa_prefill:'🔔 تصعيد جديد — نظام معك\nالقسم: {dept}\nالمشكلة: {issue}\nصعّدها: {by}\nالوقت: {time}\nيرجى فتح النظام ومتابعة المشكلة.',wa_pick:'اختر المسؤول لإرسال التنبيه له عبر واتساب:',wa_no_numbers:'لا يوجد مسؤولون لهم رقم جوال في هذا النطاق. تُضاف أرقامهم من صفحة المستخدمين.',wa_open:'فتح واتساب',wa_cancel:'إلغاء',wa_phone_label:'رقم الجوال (لتنبيهات واتساب)',wa_phone_ph:'مثال: 0555123456',
@@ -725,7 +736,7 @@ const I18N={
   e_invalid_email:'Invalid email format',e_user_not_found:'No account with this email',e_wrong_pass:'Incorrect password',e_invalid_cred:'Incorrect email or password',e_too_many:'Too many attempts, wait a moment and try again',e_disabled:'This account is disabled',e_in_use:'This email is already in use',e_weak:'Password too short (at least 6 characters)',
   err_fb_load:'Failed to load Firebase — check your internet connection.',err_server:'Failed to connect to the server.',btn_retry:'🔄 Try again',connecting:'Connecting…',e_network:'No internet connection — check your network and try again',err_unauth:'Your account is not authorized yet. Contact administration.',err_load_acct:'Failed to load account data.',toast_admin_created:'Administrator account created',toast_cloud_lost:'Cloud connection lost',toast_cloud_savefail:'Failed to save to cloud',
   nr_title:'New Round',nr_sub:'Rate each item from 1 (Poor) to 5 (Excellent). Any item rated 2 or below is automatically flagged as an issue.',
-  sec_round_info:'Round Details',f_dept:'Department',f_pname:'Patient name',f_pname_ph:'Optional',f_mrn:'File no.',f_mrn_ph:'Optional',th_pname:'Patient name',th_mrn:'File no.',optional_word:'(optional)',f_room:'Room Number',f_room_ph:'e.g. 214',f_bed:'Bed Number',f_bed_ph:'e.g. 3',f_asked:'Surveyed',opt_patient:'Patient',opt_companion:'Companion',
+  sec_round_info:'Round Details',f_dept:'Department',f_pname:'Patient name',f_pname_ph:'Optional',f_mrn:'File no.',f_mrn_ph:'Optional',th_pname:'Patient name',th_mrn:'File no.',optional_word:'(optional)',f_room:'Room Number',f_room_ph:'e.g. 214',f_bed:'Bed Number',f_bed_ph:'e.g. 3',f_jiha:'Specialty',jiha_med:'Medical',jiha_surg:'Surgical',th_jiha:'Specialty',f_asked:'Surveyed',opt_patient:'Patient',opt_companion:'Companion',
   sec_eval:'Nursing Services Evaluation',sec_overall:'Overall Rating & Comments',privacy_note:'For privacy: do not write patient names or any identifying details in the notes — record service feedback only.',q12:'Overall rating of Jubail General Hospital services',
   f_liked:'Aspects you liked or disliked',f_liked_ph:"Patient's remarks...",f_sugg:'Comments & suggestions to improve the service',f_sugg_ph:'Suggestions...',f_nurse:'Name of a nurse who gave exceptional service',f_nurse_ph:"Nurse's name (optional)",extiss_title:'Non-nursing issue (for a support dept)',extiss_help:"If the patient raised a complaint outside nursing (cleaning, food, maintenance, nutrition...), record it here. It goes to the managers, who route it to the right support department.",extiss_add:'Add non-nursing issue',extiss_ph:"Describe the patient's complaint...",extiss_remove:'Remove',extiss_label:'Non-nursing issue',extiss_will_route:'⬆ To managers',extiss_desc:'Complaint description',extiss_ex_title:'Examples of what this means:',extiss_ex_laundry:'Dirty sheets/covers · missing towels · linen not changed',extiss_ex_food:'Food cold or late · wrong meal · unsuitable for the patient',extiss_ex_maint:'Broken AC/lighting · faulty bed or bathroom · water leak',extiss_ex_social:'Needs social support · admission/discharge issue · help for patient or family',extiss_ex_docs_dep:'Physicians (Surgery/Medicine/Ob-Gyn/Peds)',extiss_ex_docs:'Doctor did not visit · delayed medical decision · needs clarification from the doctor',extiss_ex_note:'💡 Rule: if the complaint is about the six nursing questions above (introductions, kindness, call-bell speed...), record it in the rating above, not here. This is only for complaints another department — not nursing — resolves.',
   next_review:'Next: Review Issues →',live_notstarted:'Evaluation not started yet',live_avg:'Satisfaction average',live_flagged:'{n} issue(s) flagged',live_noflag:'No issues flagged ✅',
@@ -737,12 +748,12 @@ const I18N={
   age_today:'Today',age_days:'{n} days ago',age_oldest:'Oldest issue',age_overdue:'Overdue',dur_min:'{n} min',dur_hr:'{n} hr',dur_day:'{n} days',kpi_resptime:'Avg. response time',resp_sub:'escalation to closure',no_resp:'No closed issues yet',sec_overdue:'Overdue by {n}+ days',st_resolved:'✓ Resolved',st_escalated:'⬆ Escalated',st_open:'● Open',
   ap_resolved_label:'Action Plan — issue resolved on site',ap_resolved_ph:'What did you do to resolve the issue?',esc_reason_label:'Escalation reason / note to manager',esc_reason_ph:'Why does this need the manager?',
   sum_resolved:'Resolved',sum_escalated:'Escalated',sum_remaining:'{n} still undecided',
-  err_decide:'Every issue must be resolved or escalated before saving',toast_saved:'Round saved',toast_saved_esc:' · {n} issue(s) escalated to managers',err_complete:'Complete the department, room number, bed number, and surveyed person',err_rateall:'Rate all nursing items before continuing',
+  err_decide:'Every issue must be resolved or escalated before saving',toast_saved:'Round saved',toast_saved_esc:' · {n} issue(s) escalated to managers',err_complete:'Complete the department, room number, bed number, and surveyed person',err_rateall:'Rate all nursing items before continuing',err_jiha:'Select the specialty (Medical/Surgical)',
   mr_title:'My Department Rounds',mr_sub:"Your department's rounds and issue tracking.",all_title_all:'All Rounds',all_title_dept:'Department Rounds',all_sub_all:'All rounds recorded in the system.',all_sub_dept:"Your department's recorded rounds.",
   export_csv:'⬇ Export to Excel',exporting:'Preparing…',err_export_lib:'Could not load the Excel library — check your internet connection',sh_rounds:'Rounds',sh_issues:'Issues',sh_summary:'Summary',xl_title:"Ma'ak · Patient Satisfaction Rounds Report",xl_generated:'Report date',xl_scope:'Scope',xl_count:'Total rounds',xl_avg:'Overall average satisfaction',xl_issues_total:'Total issues',xl_issues_open:'Open / escalated',xl_issues_done:'Resolved',xl_by_dept:'Average by department',xl_by_q:'Average by item',xl_item:'Item',xl_avg_short:'Average',th_overall:'Overall rating',th_avg:'Average',th_nissues:'Issues',th_resolved_n:'Resolved',th_esc_n:'Escalated',th_liked:'What they liked',th_sugg:'Suggestions',th_nurse:'Outstanding nurse',th_status2:'Status',th_issue:'Issue',th_desc:'Patient description',th_plan:'Action plan',th_by:'By',no_data_export:'Nothing to export',err_noperm_export:"You don't have export permission",toast_exported:'File exported',no_rounds_title:'No rounds yet',no_rounds_tech:'Start a new round from the first tab.',no_rounds_mgr:'No rounds recorded in your scope yet.',
   th_date:'Date',th_dept:'Department',th_room:'Room',th_bed:'Bed',th_asked:'Surveyed',th_tech:'Conducted by',th_sat:'Satisfaction',th_issues:'Issues',
   badge_open:'{n} open',badge_allresolved:'All resolved',badge_noissues:'No issues',details_btn:'Details',
-  btn_delete_round:'🗑 Delete round',err_noperm_delete:'Deleting is restricted to the owner account',confirm_delete_round:'Permanently delete this round?\n\n{info}\n\nThis cannot be undone.',toast_round_deleted:'Round deleted',err_delete_round:'Delete failed — check your permission and connection',rd_title:'Round Details',by_word:'by',back:'← Back',kpi_avgsat:'Avg. Satisfaction',kpi_overall:'Overall Rating',kpi_issues:'Issues',sec_ratings:'Ratings',lbl_liked:'Highlights',lbl_sugg:'Suggestions',exc_service:'🌟 Exceptional service: {name}',sec_issues_plans:'Issues & Action Plans',issue_word:'Issue',lbl_desc:'Description',lbl_tech_plan:"Technician's plan",lbl_esc_reason:'Escalation reason',lbl_mgr_plan:"Manager's plan",
+  btn_delete_round:'🗑 Delete round',err_noperm_delete:'Deleting is restricted to the owner account',confirm_delete_round:'Permanently delete this round?\n\n{info}\n\nThis cannot be undone.',toast_round_deleted:'Round deleted',err_delete_round:'Delete failed — check your permission and connection',rd_title:'Round Details',by_word:'by',back:'← Back',kpi_avgsat:'Avg. Satisfaction',kpi_overall:'Overall Rating',kpi_issues:'Issues',sec_ratings:'Ratings',lbl_liked:'Highlights',lbl_sugg:'Suggestions',exc_service:'🌟 Exceptional service: {name}',sec_issues_plans:'Issues & Action Plans',issue_word:'Issue',lbl_desc:'Description',lbl_tech_plan:"Technician's plan",lbl_esc_reason:'Escalation reason',lbl_mgr_plan:"Manager's plan",edit_action_btn:'Edit action',edit_action_left:'Editable for {n}',edit_action_expired:'Edit window has ended (2 hours)',edit_action_hint:'The action taken can be edited within 2 hours of submitting the round.',toast_action_saved:'Action updated',h_short:'h',m_short:'m',
   pr_title:'Issues',pr_sub:'Escalated issues need an action plan. Resolved ones are shown for follow-up. Any manager can write the plan and close.',kpi_needaction:'Needs action',kpi_escalated:'Escalated',kpi_resolved:'Resolved',kpi_inscope:'in your scope',
   esc_alert:'New escalation in {dept}',sup_alert:'{n} new issue(s) arrived for your department',notif_esc_title:"Ma'ak · New escalation",notif_sup_title:"Ma'ak · Incoming issue",notif_ask:'Get alerts on your phone when a new escalation arrives?',notif_enable:'Enable alerts',notif_later:'Later',notif_on:'Alerts enabled',esc_alert_more:' (and {n} more)',esc_banner:'You have {n} new escalation(s) to handle',esc_banner_go:'View issues',
   wa_share:'WhatsApp',wa_share_title:'Send WhatsApp alert',wa_prefill:"🔔 New escalation — Ma'ak\nDepartment: {dept}\nIssue: {issue}\nEscalated by: {by}\nTime: {time}\nPlease open the system and follow up.",wa_pick:'Choose a manager to alert on WhatsApp:',wa_no_numbers:'No managers in this scope have a phone number. Add their numbers from the Users page.',wa_open:'Open WhatsApp',wa_cancel:'Cancel',wa_phone_label:'Mobile number (for WhatsApp alerts)',wa_phone_ph:'e.g. 966555123456',
@@ -1326,7 +1337,7 @@ function newDraft(){
     if(USER.role==='tech'&&!Array.isArray(USER.depts)&&USER.dept&&USER.dept!=='all')dep=USER.dept;
     else dep=ds[0]||'';
   }
-  return{dept:dep,room:'',bed:'',pname:'',ptype:'',ratings:{},liked:'',suggestions:'',nurse:'',problems:[],extIssues:[]};
+  return{dept:dep,room:'',bed:'',pname:'',jiha:'',ptype:'',ratings:{},liked:'',suggestions:'',nurse:'',problems:[],extIssues:[]};
 }
 function viewNew(){
   if(!draft)draft=newDraft();
@@ -1357,6 +1368,19 @@ function viewNew(){
         <div class="seg" id="ptypeSeg">
           <div class="seg-opt${draft.ptype==='مريض'?' on':''}" data-v="مريض">${t('opt_patient')}</div>
           <div class="seg-opt${draft.ptype==='مرافق'?' on':''}" data-v="مرافق">${t('opt_companion')}</div>
+        </div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div>
+        <label class="fld">${t('f_pname')} <span class="hint" style="font-weight:600">${t('optional_word')}</span></label>
+        <input type="text" id="pname" value="${esc(draft.pname||'')}" placeholder="${t('f_pname_ph')}">
+      </div>
+      <div id="jihaWrap" style="${isMedSurg(draft.dept)?'':'display:none'}">
+        <label class="fld req">${t('f_jiha')}</label>
+        <div class="seg" id="jihaSeg">
+          <div class="seg-opt${draft.jiha==='باطنية'?' on':''}" data-v="باطنية">${t('jiha_med')}</div>
+          <div class="seg-opt${draft.jiha==='جراحة'?' on':''}" data-v="جراحة">${t('jiha_surg')}</div>
         </div>
       </div>
     </div>
@@ -1417,7 +1441,11 @@ function viewNew(){
   $('#ptypeSeg').onclick=e=>{const o=e.target.closest('.seg-opt');if(!o)return;draft.ptype=o.dataset.v;paintSeg('ptypeSeg',o);};
   $('#room').oninput=e=>draft.room=e.target.value;
   {const bd=$('#bed');if(bd)bd.oninput=e=>draft.bed=e.target.value;}
-  const rd=$('#rdept');if(rd)rd.onchange=e=>{draft.dept=e.target.value;};
+  {const pn=$('#pname');if(pn)pn.oninput=e=>draft.pname=e.target.value;}
+  {const js=$('#jihaSeg');if(js)js.onclick=e=>{const o=e.target.closest('.seg-opt');if(!o)return;draft.jiha=o.dataset.v;paintSeg('jihaSeg',o);};}
+  const rd=$('#rdept');if(rd)rd.onchange=e=>{draft.dept=e.target.value;
+    const jw=$('#jihaWrap');if(jw){if(isMedSurg(draft.dept))jw.style.display='';else{jw.style.display='none';draft.jiha='';}}
+  };
   $('#liked').oninput=e=>draft.liked=e.target.value;
   $('#suggestions').oninput=e=>draft.suggestions=e.target.value;
   $('#nurse').oninput=e=>draft.nurse=e.target.value;
@@ -1526,6 +1554,7 @@ function updateLive(){
 /* ---- problems review step ---- */
 function goProblems(){
   if(!draft.dept||!draft.room.trim()||!(draft.bed||'').trim()||!draft.ptype){toast(t('err_complete'),'err');return;}
+  if(isMedSurg(draft.dept)&&!draft.jiha){toast(t('err_jiha'),'err');return;}
   const answered=QRATED.filter(q=>draft.ratings[q.k]).length;
   if(answered<QRATED.length){toast(t('err_rateall'),'err');return;}
   // (re)build auto problems from low ratings, keep existing decisions
@@ -1683,7 +1712,7 @@ async function commitRound(){
   }
   const round={
     id:rid,ts:new Date().toISOString(),
-    dept:draft.dept,room:draft.room.trim(),bed:(draft.bed||'').trim(),ptype:draft.ptype,tech:USER.name,techUid:USER.uid||'',techTitle:USER.title||'',
+    dept:draft.dept,room:draft.room.trim(),bed:(draft.bed||'').trim(),pname:(draft.pname||'').trim(),jiha:draft.jiha||'',ptype:draft.ptype,tech:USER.name,techUid:USER.uid||'',techTitle:USER.title||'',
     ratings:{...draft.ratings},liked:draft.liked.trim(),suggestions:draft.suggestions.trim(),nurse:draft.nurse.trim(),
     problems:draft.problems
   };
@@ -1738,13 +1767,13 @@ function roundsList(list,title,sub,scopedForMonths){
     const emptyMsg=(showMonth&&monthFilter!=='all')?t('no_rounds_month'):(USER.role==='tech'?t('no_rounds_tech'):t('no_rounds_mgr'));
     app.innerHTML+=emptyCard('📋',t('no_rounds_title'),emptyMsg);return;
   }
-  let html=`<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>${t('th_date')}</th><th>${t('th_dept')}</th><th>${t('th_room')}</th><th>${t('th_bed')}</th><th>${t('th_asked')}</th><th>${t('th_tech')}</th><th>${t('th_sat')}</th><th>${t('th_issues')}</th><th></th></tr></thead><tbody>`;
+  let html=`<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>${t('th_date')}</th><th>${t('th_dept')}</th><th>${t('th_room')}</th><th>${t('th_bed')}</th><th>${t('th_jiha')}</th><th>${t('th_pname')}</th><th>${t('th_asked')}</th><th>${t('th_tech')}</th><th>${t('th_sat')}</th><th>${t('th_issues')}</th><th></th></tr></thead><tbody>`;
   list.forEach(r=>{
     const avg=roundAvg(r);const p=r.problems;
     const openN=p.filter(x=>x.status!=='resolved').length;
     const badge=p.length? (openN? `<span class="status st-esc">`+t('badge_open',{n:arNum(openN)})+`</span>` : `<span class="status st-res">`+t('badge_allresolved')+`</span>`) : `<span class="tag">`+t('badge_noissues')+`</span>`;
     html+=`<tr>
-      <td>${fmtDate(r.ts)}</td><td>${esc(deptLabel(r.dept))}</td><td>${esc(r.room)}</td><td>${r.bed?esc(r.bed):'<span class="hint">—</span>'}</td><td>${esc(ptypeLabel(r.ptype))}</td><td>${esc(r.tech||'')}</td>
+      <td>${fmtDate(r.ts)}</td><td>${esc(deptLabel(r.dept))}</td><td>${esc(r.room)}</td><td>${r.bed?esc(r.bed):'<span class="hint">—</span>'}</td><td>${r.jiha?esc(r.jiha):'<span class="hint">—</span>'}</td><td>${r.pname?esc(r.pname):'<span class="hint">—</span>'}</td><td>${esc(ptypeLabel(r.ptype))}</td><td>${esc(r.tech||'')}</td>
       <td><b style="color:${avgColor(avg)}">${avg?avg.toFixed(1):'—'}/5</b></td>
       <td>${badge}</td>
       <td><button class="btn btn-outline btn-sm" onclick="openRound('${r.id}')">${t('details_btn')}</button></td>
@@ -1760,7 +1789,7 @@ function openRound(id){
   const avg=roundAvg(r);
   const app=$('#app');
   app.innerHTML=`<div class="page-head"><div><h2>${t('rd_title')}</h2>
-    <p>${fmtDate(r.ts)} · ${esc(deptLabel(r.dept))} · ${t('room_word')} ${esc(r.room)}${r.bed?' · '+t('f_bed')+' '+esc(r.bed):''} · ${esc(ptypeLabel(r.ptype))} · ${t('by_word')} ${esc(r.tech)}</p>
+    <p>${fmtDate(r.ts)} · ${esc(deptLabel(r.dept))}${r.jiha?' ('+esc(r.jiha)+')':''} · ${t('room_word')} ${esc(r.room)}${r.bed?' · '+t('f_bed')+' '+esc(r.bed):''}${r.pname?' · '+esc(r.pname):''} · ${esc(ptypeLabel(r.ptype))} · ${t('by_word')} ${esc(r.tech)}</p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${canDeleteRounds(USER)?`<button class="btn btn-outline btn-sm" style="color:var(--coral);border-color:var(--coral)" onclick="deleteRound('${r.id}')">${t('btn_delete_round')}</button>`:''}
@@ -1800,13 +1829,33 @@ function problemFullCard(p,r){
     </div>
     <div class="prob-body">
       ${p.note?`<div class="hint" style="color:var(--text);margin-bottom:8px"><b>${t('lbl_desc')}:</b> ${esc(p.note)}</div>`:''}
-      ${p.actionTech?`<div style="background:var(--green-soft);border-radius:10px;padding:11px 13px;margin-bottom:8px"><b style="color:#146b48">${t('lbl_tech_plan')}:</b> ${esc(p.actionTech)}<div class="hint">${t('by_word')} ${esc(p.handledBy||r.tech)}</div></div>`:''}
+      ${p.actionTech?`<div style="background:var(--green-soft);border-radius:10px;padding:11px 13px;margin-bottom:8px"><b style="color:#146b48">${t('lbl_tech_plan')}:</b> <span id="atx_${p.id}">${esc(p.actionTech)}</span><div class="hint">${t('by_word')} ${esc(p.handledBy||r.tech)}</div>${canEditAction(r)&&!p.external?`<div id="ated_${p.id}" style="margin-top:8px"><button class="btn btn-outline btn-sm" onclick="startEditAction('${r.id}','${p.id}')">✎ ${t('edit_action_btn')}</button> <span class="hint">${t('edit_action_left',{n:editHrsLeft(r)})}</span></div>`:''}</div>`:''}
       ${p.escalatedTo?`<div style="background:var(--amber-soft);border-radius:10px;padding:11px 13px;margin-bottom:8px"><b style="color:#8a5f0e">${t('lbl_esc_reason')}:</b> ${esc(p.escalatedTo)}</div>`:''}
       ${p.actionSup?`<div style="background:var(--teal-soft);border-radius:10px;padding:11px 13px"><b style="color:var(--ink)">${t('lbl_mgr_plan')}:</b> ${esc(p.actionSup)}<div class="hint">${t('by_word')} ${esc(p.supName||'')}${p.supRole?' · '+roleLabel(p.supRole):''}</div></div>`:''}
     </div></div>`;
 }
 
-/* ================= PROBLEMS (managers) ================= */
+function editHrsLeft(r){const left=EDIT_WINDOW_H-(Date.now()-new Date(r.ts).getTime())/3600000;const m=Math.max(0,Math.round(left*60));return m>=60?(Math.floor(m/60)+t('h_short')+' '+(m%60)+t('m_short')):(m+t('m_short'));}
+function startEditAction(rid,pid){
+  const r=ROUNDS.find(x=>x.id===rid);if(!r||!canEditAction(r))return;
+  const p=r.problems.find(x=>x.id===pid);if(!p)return;
+  const box=$('#ated_'+pid);if(!box)return;
+  box.innerHTML=`<textarea id="ata_${pid}" style="width:100%;min-height:70px">${esc(p.actionTech)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-green btn-sm" onclick="saveEditAction('${rid}','${pid}')">💾 ${t('save_changes')}</button>
+      <button class="btn btn-outline btn-sm" onclick="openRound('${rid}')">${t('btn_cancel')}</button>
+    </div>`;
+  const ta=$('#ata_'+pid);if(ta){ta.focus();}
+}
+function saveEditAction(rid,pid){
+  const r=ROUNDS.find(x=>x.id===rid);if(!r||!canEditAction(r)){toast(t('edit_action_expired'),'err');return;}
+  const p=r.problems.find(x=>x.id===pid);if(!p)return;
+  const ta=$('#ata_'+pid);if(!ta)return;
+  p.actionTech=ta.value.trim();
+  p.actionEditedTs=new Date().toISOString();
+  try{ DB.save(r); toast(t('toast_action_saved'),'ok'); }catch(e){ toast(t('err_delete_round'),'err'); }
+  openRound(rid);
+}
 function viewProblems(){
   clearEscNew();
   const app=$('#app');
@@ -3243,6 +3292,8 @@ async function exportCSV(){ // kept name: called from the toolbar button
     {header:t('th_dept'),key:'dept',width:28},
     {header:t('th_room'),key:'room',width:10},
     {header:t('th_bed'),key:'bed',width:8},
+    {header:t('th_jiha'),key:'jiha',width:10},
+    {header:t('th_pname'),key:'pname',width:20},
     {header:t('th_asked'),key:'ptype',width:11},
     {header:t('th_tech'),key:'tech',width:18},
     {header:t('th_title'),key:'ttitle',width:20},
@@ -3258,7 +3309,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
   ];
   xlHeadRow(ws,ws.getRow(1),62);   // rated-item questions are long → taller header
   list.forEach((r,i)=>{
-    const row=ws.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',ptype:ptypeLabel(r.ptype),tech:r.tech||'',ttitle:r.techTitle||'',
+    const row=ws.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',jiha:r.jiha||'',pname:r.pname||'',ptype:ptypeLabel(r.ptype),tech:r.tech||'',ttitle:r.techTitle||'',
       q3:r.ratings.q3||null,q4:r.ratings.q4||null,q5:r.ratings.q5||null,q6:r.ratings.q6||null,q7:r.ratings.q7||null,q8:r.ratings.q8||null,
       overall:r.ratings.overall||null,avg:roundAvg(r)?Number(roundAvg(r).toFixed(2)):null,
       np:r.problems.length,nr:r.problems.filter(p=>p.status==='resolved').length,
@@ -3296,6 +3347,8 @@ async function exportCSV(){ // kept name: called from the toolbar button
       {header:t('th_dept'),key:'dept',width:26},
       {header:t('th_room'),key:'room',width:10},
       {header:t('th_bed'),key:'bed',width:8},
+      {header:t('th_jiha'),key:'jiha',width:10},
+      {header:t('th_pname'),key:'pname',width:20},
       {header:t('th_issue'),key:'issue',width:40},
       {header:t('th_status2'),key:'st',width:14},
       {header:t('th_desc'),key:'desc',width:34},
@@ -3305,7 +3358,7 @@ async function exportCSV(){ // kept name: called from the toolbar button
     xlHeadRow(w2,w2.getRow(1));
     probs.forEach(({p,r},i)=>{
       const st=p.status==='resolved'?t('bar_resolved'):p.status==='escalated'?t('bar_escalated'):t('bar_open');
-      const row=w2.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',issue:probLabel(p),st,
+      const row=w2.addRow({date:xlDate(r.ts),dept:deptLabel(r.dept),room:r.room,bed:r.bed||'',jiha:r.jiha||'',pname:r.pname||'',issue:probLabel(p),st,
         desc:p.note||'',plan:p.actionSup||p.actionTech||'',by:p.supName||p.handledBy||r.tech||''});
       row.height=20;
       row.eachCell({includeEmpty:true},c=>{
