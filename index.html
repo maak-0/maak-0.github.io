@@ -2781,10 +2781,13 @@ function renderDash(){
   const hitTarget=satPct!=null&&satPct>=SAT_TARGET;
   const respVals=probs.filter(p=>p.status==='resolved').map(p=>hoursBetween(escStart(p),p.resolvedTs)).filter(x=>x!=null);
   const respAvg=respVals.length?respVals.reduce((a,b)=>a+b,0)/respVals.length:null;
-  // coverage: rounds vs eligible patients over the current period
-  const curBucket=cur||{};
-  const pStart=curBucket.start,pEnd=curBucket.end;
-  const cov=(pStart&&pEnd)?coverageFor(curRounds,(isMultiDept(USER)?dashDept:USER.dept),pStart,pEnd):null;
+  // coverage: rounds vs eligible patients over the current period.
+  // Derive the period window from the selected period itself (NOT the rounds bucket),
+  // so coverage still shows when counts exist even if there are few/no rounds.
+  const _cr=stRange(dashPeriod);
+  const pStart=cur&&cur.start?cur.start:_cr.start;
+  const pEnd=cur&&cur.end?cur.end:new Date();
+  const cov=coverageFor(curRounds,(isMultiDept(USER)?dashDept:USER.dept),pStart,pEnd);
   let html=`<div class="kpis">
     <div class="kpi ${satPct==null?'accent':hitTarget?'good':'danger'}"><div class="lbl">${t('kpi_avgsat_period',{period:periodLabel(dashPeriod)})}</div>
       <div class="val" style="${satPct==null?'':'color:'+(hitTarget?'var(--green)':'var(--coral)')}">${avg?avg.toFixed(1):'—'}<span style="font-size:16px">/5</span></div>
