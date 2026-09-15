@@ -823,7 +823,12 @@ const DB={
 };
 /* patient-count records, keyed by dept__date */
 let PCOUNTS={};
-function countId(dept,date){return dept+'__'+date;}
+function countId(dept,date){
+  // Firestore doc IDs can't contain '/', so encode the dept part safely.
+  // The 'dept' FIELD on the doc keeps the real name (used by queries + rules).
+  const safe=String(dept).replace(/[\/\\.#$\[\]]/g,'-');
+  return safe+'__'+date;
+}
 function saveLocalCounts(){try{localStorage.setItem('jhn_pcounts_v1',JSON.stringify(PCOUNTS));}catch(e){}}
 function loadLocalCounts(){try{const s=localStorage.getItem('jhn_pcounts_v1');if(s)PCOUNTS=JSON.parse(s);}catch(e){}}
 let pcUnsubs=[];
