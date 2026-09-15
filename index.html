@@ -653,7 +653,7 @@ const I18N={
   login_quote:'قد ينسى المريض أسماءنا، لكنه لن ينسى من جلس معه دقيقة وسأل: كيف حالك اليوم؟',login_title:'معك',login_sub:'جولات رضا المرضى · مستشفى الجبيل العام',
   email:'البريد الإلكتروني',password:'كلمة المرور',login_btn:'تسجيل الدخول',login_note:'الدخول للموظفين المصرّح لهم فقط. للحصول على حساب يُراجع قسم الإدارة.',login_signingin:'جارِ الدخول…',
   err_fill_login:'إدخال البريد وكلمة المرور',kpi_coverage:'نسبة التغطية',cov_sub:'{r} جولة من {e} مريض',cov_nodata:'أدخلي أعداد المرضى',
-  pc_title:'أعداد المرضى (يومي)',pc_hint:'أدخلي إجمالي المرضى والمستثنين لكل يوم لمقارنتها بعدد الجولات.',
+  pc_title:'أعداد المرضى (يومي)',pc_hint:'إدخال إجمالي المرضى والمستثنين لكل يوم لمقارنتها بعدد الجولات. يمكن اختيار يوم سابق نُسي إدخاله وتعبئته — أما اليوم المُدخل فيُثبّت ولا يُعدّل.',
   pc_date:'التاريخ',pc_total:'إجمالي المرضى',pc_excluded:'عدد المستثنين',pc_save:'حفظ العدد',
   pc_last_by:'آخر إدخال',pc_saved:'تم حفظ عدد المرضى',pc_noperm:'إدخال الأعداد متاح لرئيس القسم فقط',pc_locked:'عدد مُثبّت — لا يمكن تعديل أيام سابقة مُدخَلة',
   pc_err_excl:'عدد المستثنين لا يمكن أن يتجاوز الإجمالي',
@@ -719,7 +719,7 @@ const I18N={
   login_quote:'A patient may forget our names, but never the one who sat with them a minute and asked: how are you today?',login_title:'Ma\'ak',login_sub:'Patient Satisfaction Rounds · Jubail General Hospital',
   email:'Email',password:'Password',login_btn:'Sign in',login_note:'Access is limited to authorized staff. Contact administration for an account.',login_signingin:'Signing in…',
   err_fill_login:'Enter your email and password',kpi_coverage:'Coverage',cov_sub:'{r} rounds of {e} patients',cov_nodata:'Enter patient counts',
-  pc_title:'Patient counts (daily)',pc_hint:'Enter total and excluded patients per day to compare against rounds.',
+  pc_title:'Patient counts (daily)',pc_hint:'Enter total and excluded patients per day to compare against rounds. You can pick a past day that was missed and fill it in — a day already entered is locked and can\'t be changed.',
   pc_date:'Date',pc_total:'Total patients',pc_excluded:'Excluded',pc_save:'Save count',
   pc_last_by:'Last entry',pc_saved:'Patient count saved',pc_noperm:'Only the head nurse can enter counts',pc_locked:'Recorded — past days already entered can\'t be edited',
   pc_err_excl:'Excluded cannot exceed total',
@@ -2765,7 +2765,12 @@ function renderDash(){
   const resRate=probs.length?Math.round(resolved/probs.length*100):null;
 
   const box=$('#dashBody');
-  if(!data.length){box.innerHTML=emptyCard('📊',t('nodata_title'),t('nodata_sub'));return;}
+  if(!data.length){
+    // heads still need the patient-count entry panel even before any rounds exist
+    box.innerHTML=(canEditCounts(USER)?patientCountPanel(isMultiDept(USER)?dashDept:USER.dept):'')
+      +emptyCard('📊',t('nodata_title'),t('nodata_sub'));
+    return;
+  }
 
   const satPct=avg?pct(avg):null;
   const hitTarget=satPct!=null&&satPct>=SAT_TARGET;
