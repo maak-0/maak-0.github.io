@@ -933,7 +933,7 @@ async function handleAuth(fbUser){
     }
     if(prof.active===false){ loginMsg(t('err_unauth')); await auth.signOut(); return; }
     USER={uid:fbUser.uid,email:fbUser.email,...prof};
-    loginMsg(''); hideLogin(); subscribeRounds(); subscribeCounts(); boot();
+    loginMsg(''); hideLogin(); subscribeRounds(); subscribeCounts(); loadManagerDir(); boot();
   }catch(e){console.error(e);loginMsg(t('err_load_acct'));}
 }
 
@@ -3062,7 +3062,7 @@ async function loadStaff(){
 // managers may lack a 'dept' field (sup/admin), so fetch them by role for the WhatsApp picker
 let MGRDIR=[];
 async function loadManagerDir(){
-  if(!cloud||!canManageProblems(USER))return;
+  if(!cloud)return;
   try{
     const seen={};
     for(const role of ['head','sup','admin']){
