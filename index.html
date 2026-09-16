@@ -1119,14 +1119,17 @@ function managersForDept(dept){
            :(typeof STAFF!=='undefined'&&STAFF?STAFF:[]);
   const dir=base.concat(typeof MGRDIR!=='undefined'?MGRDIR:[]);
   const seen={};
-  dir.filter(u=>u.active!==false && ['head','sup','admin'].includes(u.role)
-    && u.uid!==(USER&&USER.uid)
-    && userDepts(u).some(d=>d==='*'||d===dept))
-    .forEach(u=>{ if(!seen[u.uid]||(!seen[u.uid].phone&&u.phone))seen[u.uid]=u; });
-  // managers WITH a phone first, then those missing one (so they're visible to add later)
-  return Object.values(seen).sort((a,b)=>(b.phone?1:0)-(a.phone?1:0));
+  dir.filter(u=>u.active!==false && u.phone && u.uid!==(USER&&USER.uid) && (
+        // nursing managers whose scope covers this department
+        (['head','sup','admin'].includes(u.role) && userDepts(u).some(d=>d==='*'||d===dept))
+        // OR any support-department account that has a phone (shown on every escalation)
+        || u.role==='support'
+      ))
+    .forEach(u=>{seen[u.uid]=u;});
+  // nursing managers first, then support departments
+  return Object.values(seen).sort((a,b)=>(a.role==='support'?1:0)-(b.role==='support'?1:0));
 }
-function managersWithPhone(dept){return managersForDept(dept).filter(m=>m.phone);}
+function managersWithPhone(dept){return managersForDept(dept);} // all already have phones
 function waMessage(item){
   const r=item.round||{};
   return t('wa_prefill',{
@@ -1152,16 +1155,12 @@ function waPicker(mgrs,msg){
   ov.onclick=e=>{if(e.target===ov)ov.remove();};
   const body = mgrs.length
     ? `<p class="hint" style="margin:0 0 12px">${t('wa_pick')}</p>
-       <div class="wa-list">${mgrs.map(m=>m.phone?`
+       <div class="wa-list">${mgrs.map(m=>`
          <a class="wa-item" href="${waLink(m.phone,msg)}" target="_blank" onclick="document.getElementById('waPick').remove()">
            <span class="wa-av">${esc(initials(m.name))}</span>
-           <span class="wa-meta"><b>${esc(m.name)}</b><span class="hint">${roleLabel(m.role)} · <span dir="ltr">${esc(m.phone)}</span></span></span>
+           <span class="wa-meta"><b>${esc(m.name)}</b><span class="hint">${m.role==='support'?esc(mySupportDepts(m).map(d=>supportLabel(d)).join('، ')||t('role_support')):roleLabel(m.role)} · <span dir="ltr">${esc(m.phone)}</span></span></span>
            <span class="wa-go">${t('wa_open')} ›</span>
-         </a>`:`
-         <div class="wa-item" style="opacity:.6;cursor:default">
-           <span class="wa-av">${esc(initials(m.name))}</span>
-           <span class="wa-meta"><b>${esc(m.name)}</b><span class="hint">${roleLabel(m.role)} · ${t('wa_no_phone')}</span></span>
-         </div>`).join('')}</div>`
+         </a>`).join('')}</div>`
     : `<p class="hint" style="margin:0">${t('wa_no_numbers')}</p>`;
   ov.innerHTML=`<div class="rub-box" style="max-width:440px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
@@ -3071,7 +3070,7 @@ async function loadManagerDir(){
   if(!cloud)return;
   try{
     const seen={};
-    for(const role of ['head','sup','admin']){
+    for(const role of ['head','sup','admin','support']){
       const snap=await db.collection(UC).where('role','==',role).get();
       snap.docs.forEach(x=>{const u={uid:x.id,...x.data()};if(u.phone)seen[x.id]=u;});
     }
