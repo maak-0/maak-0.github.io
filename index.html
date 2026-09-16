@@ -693,7 +693,7 @@ const I18N={
   btn_delete_round:'🗑 حذف الجولة',err_noperm_delete:'الحذف مقصور على حساب المالك',confirm_delete_round:'حذف هذه الجولة نهائياً؟\n\n{info}\n\nما يمكن التراجع عن الحذف.',toast_round_deleted:'تم حذف الجولة',err_delete_round:'تعذّر الحذف — يُرجى التأكد من الصلاحية والاتصال',rd_title:'تفاصيل الجولة',by_word:'بواسطة',back:'→ رجوع',kpi_avgsat:'متوسط الرضا',kpi_overall:'التقييم العام',kpi_issues:'المشاكل',sec_ratings:'التقييمات',lbl_liked:'أبرز الجوانب',lbl_sugg:'مقترحات',exc_service:'🌟 خدمة استثنائية: {name}',sec_issues_plans:'المشاكل وخطط العمل',issue_word:'مشكلة',lbl_desc:'الوصف',lbl_tech_plan:'خطة القائم بالجولة',lbl_esc_reason:'سبب التصعيد',lbl_mgr_plan:'خطة المسؤول',edit_action_btn:'تعديل الإجراء',edit_action_left:'متاح التعديل لمدة {n}',edit_action_expired:'انتهت مهلة التعديل (ساعتان)',edit_action_hint:'يمكن تعديل الإجراء المتخذ خلال ساعتين من رفع الجولة.',toast_action_saved:'تم تحديث الإجراء',edit_esc_hint:'إذا تبيّن أنه لا يمكن حل المشكلة، يمكن تحويلها إلى «مصعّدة» ليتابعها المسؤول:',edit_esc_reason_ph:'سبب التصعيد (اختياري)...',edit_esc_btn:'تحويل إلى مصعّدة',toast_escalated_now:'تم تحويل المشكلة إلى مصعّدة',h_short:'س',m_short:'د',
   pr_title:'المشاكل',pr_sub:'المشاكل المصعّدة تحتاج خطة عمل. المحلولة معروضة للمتابعة. أي مسؤول يقدر يكتب الخطة ويقفل.',kpi_needaction:'تحتاج إجراء',kpi_escalated:'مصعّدة',kpi_resolved:'تم حلها',kpi_inscope:'في نطاقك',
   esc_alert:'تصعيد جديد في {dept}',sup_alert:'وصلت {n} مشكلة جديدة للقسم',notif_esc_title:'معك · تصعيد جديد',notif_sup_title:'معك · مشكلة واردة',notif_ask:'تفعيل التنبيهات على الجهاز عند أي تصعيد جديد؟',notif_enable:'تفعيل التنبيهات',notif_later:'لاحقاً',notif_on:'تم تفعيل التنبيهات',esc_alert_more:' (و{n} غيره)',esc_banner:'عندك {n} تصعيد جديد يحتاج إجراء',esc_banner_go:'عرض المشاكل',
-  wa_share:'واتساب',wa_share_title:'إرسال تنبيه واتساب',wa_prefill:'🔔 تصعيد جديد — نظام معك\nالقسم: {dept}\nالمشكلة: {issue}\nصعّدها: {by}\nالوقت: {time}\nيرجى فتح النظام ومتابعة المشكلة.',wa_pick:'اختر المسؤول لإرسال التنبيه له عبر واتساب:',wa_no_numbers:'لا يوجد مسؤولون لهم رقم جوال في هذا النطاق. تُضاف أرقامهم من صفحة المستخدمين.',wa_open:'فتح واتساب',wa_cancel:'إلغاء',wa_phone_label:'رقم الجوال (لتنبيهات واتساب)',wa_phone_ph:'مثال: 0555123456',
+  wa_share:'واتساب',wa_share_title:'إرسال تنبيه واتساب',wa_prefill:'🔔 تصعيد جديد — نظام معك\nالقسم: {dept}\nالمشكلة: {issue}\nصعّدها: {by}\nالوقت: {time}\nيرجى فتح النظام ومتابعة المشكلة.',wa_pick:'اختر المسؤول لإرسال التنبيه له عبر واتساب:',wa_no_phone:'لا يوجد رقم جوال — يُضاف من صفحة المستخدمين',wa_no_numbers:'لا يوجد مسؤولون لهم رقم جوال في هذا النطاق. تُضاف أرقامهم من صفحة المستخدمين.',wa_open:'فتح واتساب',wa_cancel:'إلغاء',wa_phone_label:'رقم الجوال (لتنبيهات واتساب)',wa_phone_ph:'مثال: 0555123456',
   sec_needaction:'تحتاج إجراء ({n})',no_esc_title:'ما فيه مشاكل مصعّدة',no_esc_sub:'كل شي تحت السيطرة. المصعّد الجديد بيظهر هنا.',esc_by:'صعّدها',lbl_patient_desc:'وصف المريض',lbl_tech_note:'ملاحظة القائم بالجولة',ap_label:'خطة العمل (Action Plan)',ap_ph:'وش الإجراء التصحيحي؟ ومين المسؤول عن التنفيذ؟',btn_save_close:'✔ حفظ الخطة وإقفال المشكلة',sec_resolved:'تم حلها ({n})',by_the_plan:'خطة العمل',
   err_noperm_close:'لا تملكين صلاحية إقفال المشاكل',err_write_plan:'كتابة خطة العمل قبل الإقفال',toast_issue_closed:'تم إقفال المشكلة',
   err_noperm:'لا تملكين هذه الصلاحية',cancel:'إلغاء',
@@ -759,7 +759,7 @@ const I18N={
   btn_delete_round:'🗑 Delete round',err_noperm_delete:'Deleting is restricted to the owner account',confirm_delete_round:'Permanently delete this round?\n\n{info}\n\nThis cannot be undone.',toast_round_deleted:'Round deleted',err_delete_round:'Delete failed — check your permission and connection',rd_title:'Round Details',by_word:'by',back:'← Back',kpi_avgsat:'Avg. Satisfaction',kpi_overall:'Overall Rating',kpi_issues:'Issues',sec_ratings:'Ratings',lbl_liked:'Highlights',lbl_sugg:'Suggestions',exc_service:'🌟 Exceptional service: {name}',sec_issues_plans:'Issues & Action Plans',issue_word:'Issue',lbl_desc:'Description',lbl_tech_plan:"Technician's plan",lbl_esc_reason:'Escalation reason',lbl_mgr_plan:"Manager's plan",edit_action_btn:'Edit action',edit_action_left:'Editable for {n}',edit_action_expired:'Edit window has ended (2 hours)',edit_action_hint:'The action taken can be edited within 2 hours of submitting the round.',toast_action_saved:'Action updated',edit_esc_hint:'If it turns out the issue cannot be resolved, switch it to «Escalated» for a manager to handle:',edit_esc_reason_ph:'Escalation reason (optional)...',edit_esc_btn:'Switch to Escalated',toast_escalated_now:'Issue switched to escalated',h_short:'h',m_short:'m',
   pr_title:'Issues',pr_sub:'Escalated issues need an action plan. Resolved ones are shown for follow-up. Any manager can write the plan and close.',kpi_needaction:'Needs action',kpi_escalated:'Escalated',kpi_resolved:'Resolved',kpi_inscope:'in your scope',
   esc_alert:'New escalation in {dept}',sup_alert:'{n} new issue(s) arrived for your department',notif_esc_title:"Ma'ak · New escalation",notif_sup_title:"Ma'ak · Incoming issue",notif_ask:'Get alerts on your phone when a new escalation arrives?',notif_enable:'Enable alerts',notif_later:'Later',notif_on:'Alerts enabled',esc_alert_more:' (and {n} more)',esc_banner:'You have {n} new escalation(s) to handle',esc_banner_go:'View issues',
-  wa_share:'WhatsApp',wa_share_title:'Send WhatsApp alert',wa_prefill:"🔔 New escalation — Ma'ak\nDepartment: {dept}\nIssue: {issue}\nEscalated by: {by}\nTime: {time}\nPlease open the system and follow up.",wa_pick:'Choose a manager to alert on WhatsApp:',wa_no_numbers:'No managers in this scope have a phone number. Add their numbers from the Users page.',wa_open:'Open WhatsApp',wa_cancel:'Cancel',wa_phone_label:'Mobile number (for WhatsApp alerts)',wa_phone_ph:'e.g. 966555123456',
+  wa_share:'WhatsApp',wa_share_title:'Send WhatsApp alert',wa_prefill:"🔔 New escalation — Ma'ak\nDepartment: {dept}\nIssue: {issue}\nEscalated by: {by}\nTime: {time}\nPlease open the system and follow up.",wa_pick:'Choose a manager to alert on WhatsApp:',wa_no_phone:'No phone number — add it from the Users page',wa_no_numbers:'No managers in this scope have a phone number. Add their numbers from the Users page.',wa_open:'Open WhatsApp',wa_cancel:'Cancel',wa_phone_label:'Mobile number (for WhatsApp alerts)',wa_phone_ph:'e.g. 966555123456',
   sec_needaction:'Needs Action ({n})',no_esc_title:'No escalated issues',no_esc_sub:'All under control. New escalations appear here.',esc_by:'escalated by',lbl_patient_desc:"Patient's description",lbl_tech_note:"Technician's note",ap_label:'Action Plan',ap_ph:"What's the corrective action, and who is responsible?",btn_save_close:'✔ Save plan & close issue',sec_resolved:'Resolved ({n})',by_the_plan:'Action plan',
   err_noperm_close:"You don't have permission to close issues",err_write_plan:'Write the action plan before closing',toast_issue_closed:'Issue closed',
   err_noperm:"You don't have permission for this",cancel:'Cancel',
@@ -1120,11 +1120,13 @@ function managersForDept(dept){
   const dir=base.concat(typeof MGRDIR!=='undefined'?MGRDIR:[]);
   const seen={};
   dir.filter(u=>u.active!==false && ['head','sup','admin'].includes(u.role)
-    && u.phone && u.uid!==(USER&&USER.uid)
+    && u.uid!==(USER&&USER.uid)
     && userDepts(u).some(d=>d==='*'||d===dept))
-    .forEach(u=>{seen[u.uid]=u;});
-  return Object.values(seen);
+    .forEach(u=>{ if(!seen[u.uid]||(!seen[u.uid].phone&&u.phone))seen[u.uid]=u; });
+  // managers WITH a phone first, then those missing one (so they're visible to add later)
+  return Object.values(seen).sort((a,b)=>(b.phone?1:0)-(a.phone?1:0));
 }
+function managersWithPhone(dept){return managersForDept(dept).filter(m=>m.phone);}
 function waMessage(item){
   const r=item.round||{};
   return t('wa_prefill',{
@@ -1134,28 +1136,32 @@ function waMessage(item){
     time:fmtDate(r.ts||new Date().toISOString())
   });
 }
-function waLink(phone,msg){return 'https://wa.me/'+phone+'?text='+encodeURIComponent(msg);}
+function waLink(phone,msg){return 'https://wa.me/'+normPhone(phone)+'?text='+encodeURIComponent(msg);}
 function waIcon(){return '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-2px"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.3 0-.5s-.6-1.5-.9-2.1c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 .9-1 2.3s1 2.7 1.2 2.9c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.4 1.3 4.9L2 22l5.3-1.4c1.4.8 3 1.2 4.7 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.5 0-3-.4-4.3-1.2l-.3-.2-3.1.8.8-3-.2-.3C4.4 15.3 4 13.7 4 12c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8z"/></svg>';}
 function openWhatsAppFor(roundId,probId){
   const r=ROUNDS.find(x=>x.id===roundId); if(!r)return;
   const item={...(r.problems||[]).find(p=>p.id===probId),round:r};
-  const mgrs=managersForDept(r.dept);
+  const withPhone=managersWithPhone(r.dept);
   const msg=waMessage(item);
-  if(mgrs.length===1){ window.open(waLink(mgrs[0].phone,msg),'_blank'); return; }
-  // 0 or many → show a small picker (0 shows a hint to add numbers)
-  waPicker(mgrs,msg);
+  if(withPhone.length===1){ window.open(waLink(withPhone[0].phone,msg),'_blank'); return; }
+  // show the full manager list (with + without phone) so missing numbers are visible
+  waPicker(managersForDept(r.dept),msg);
 }
 function waPicker(mgrs,msg){
   const ov=document.createElement('div'); ov.className='rub-overlay'; ov.id='waPick';
   ov.onclick=e=>{if(e.target===ov)ov.remove();};
   const body = mgrs.length
     ? `<p class="hint" style="margin:0 0 12px">${t('wa_pick')}</p>
-       <div class="wa-list">${mgrs.map(m=>`
+       <div class="wa-list">${mgrs.map(m=>m.phone?`
          <a class="wa-item" href="${waLink(m.phone,msg)}" target="_blank" onclick="document.getElementById('waPick').remove()">
            <span class="wa-av">${esc(initials(m.name))}</span>
            <span class="wa-meta"><b>${esc(m.name)}</b><span class="hint">${roleLabel(m.role)} · <span dir="ltr">${esc(m.phone)}</span></span></span>
            <span class="wa-go">${t('wa_open')} ›</span>
-         </a>`).join('')}</div>`
+         </a>`:`
+         <div class="wa-item" style="opacity:.6;cursor:default">
+           <span class="wa-av">${esc(initials(m.name))}</span>
+           <span class="wa-meta"><b>${esc(m.name)}</b><span class="hint">${roleLabel(m.role)} · ${t('wa_no_phone')}</span></span>
+         </div>`).join('')}</div>`
     : `<p class="hint" style="margin:0">${t('wa_no_numbers')}</p>`;
   ov.innerHTML=`<div class="rub-box" style="max-width:440px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
